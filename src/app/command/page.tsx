@@ -40,11 +40,10 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label="累計人次" value={d.totals.total} />
         <StatTile label="留站觀察" value={d.totals.observing} tone={d.totals.observing ? "warning" : "default"} />
         <StatTile label="後送醫院" value={d.totals.transferred} tone={d.totals.transferred ? "danger" : "default"} />
-        <StatTile label="1-2級重症" value={d.totals.critical} tone={d.totals.critical ? "danger" : "default"} />
         <StatTile label="待處理申請" value={d.pendingRequests} tone={d.pendingRequests ? "danger" : "default"} />
       </div>
 
