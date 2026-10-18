@@ -231,6 +231,10 @@ export async function updatePatient(id: string, data: Partial<NewData<Patient>>)
   await col.patients.doc(id).update({ ...data, updatedAt: new Date() });
 }
 
+export async function deletePatient(id: string) {
+  await col.patients.doc(id).delete();
+}
+
 // ── 物資 ──────────────────────────────────────────────────
 
 const byName = (a: Supply, b: Supply) => a.name.localeCompare(b.name, "zh-Hant");

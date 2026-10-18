@@ -28,7 +28,7 @@ export default async function StationHome({
     <>
       {saved && (
         <p role="status" className="rounded-lg bg-green-50 px-3 py-2 font-semibold text-green-800 ring-1 ring-green-200">
-          ✓ {saved === "updated" ? "紀錄已更新" : "已完成登記"}
+          ✓ {{ updated: "紀錄已更新", deleted: "紀錄已刪除" }[saved] ?? "已完成登記"}
         </p>
       )}
 

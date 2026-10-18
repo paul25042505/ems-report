@@ -79,6 +79,37 @@ test("國軍官兵在姓名左邊選擇階級", async ({ browser }) => {
   await expect(command.getByRole("cell", { name: "上士 測試陳大華" })).toBeVisible();
 });
 
+test("刪除傷患紀錄（需確認）", async ({ browser }) => {
+  const reporter = await browser.newPage();
+  await enterStation(reporter, "分站B");
+  await reporter.getByRole("link", { name: "＋ 登記傷患" }).click();
+  await choose(reporter, "patientType", "民眾");
+  await reporter.getByLabel("姓名").fill("待刪除測試");
+  await choose(reporter, "sex", "男");
+  await choose(reporter, "ageGroup", "成人(18-64)");
+  await choose(reporter, "category", "其他");
+  await reporter.getByRole("button", { name: "送出登記" }).click();
+  await reporter.getByText("待刪除測試・其他").click();
+
+  // 取消確認 → 不刪除
+  reporter.once("dialog", (d) => d.dismiss());
+  await reporter.getByRole("button", { name: "刪除此筆紀錄" }).click();
+  await expect(reporter.getByRole("heading", { name: "更新傷患紀錄" })).toBeVisible();
+
+  // 確認 → 刪除並回站點首頁
+  reporter.once("dialog", (d) => d.accept());
+  await reporter.getByRole("button", { name: "刪除此筆紀錄" }).click();
+  await expect(reporter.getByText("✓ 紀錄已刪除")).toBeVisible();
+  await expect(reporter.getByText("待刪除測試・其他")).toHaveCount(0);
+
+  const command = await browser.newPage();
+  await enterCommand(command);
+  await command.goto("/command/patients");
+  await expect(command.getByText("待刪除測試")).toHaveCount(0);
+  await command.goto("/admin/audit");
+  await expect(command.getByRole("cell", { name: "刪除傷患紀錄" })).toBeVisible();
+});
+
 test("表單缺漏欄位時顯示錯誤，保留已填內容", async ({ page }) => {
   await enterStation(page, "主站");
   await page.getByRole("link", { name: "＋ 登記傷患" }).click();

@@ -3,6 +3,7 @@ import { getPatient } from "@/lib/repo";
 import { getStationContext } from "@/lib/context";
 import { formatDateTime, toLocalInput } from "@/lib/time";
 import { PatientForm } from "../patient-form";
+import { DeletePatientButton } from "./delete-button";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ stationId: string; id: string }> }) {
   const { stationId, id } = await params;
@@ -25,6 +26,9 @@ export default async function EditPatientPage({ params }: { params: Promise<{ st
           departedAt: p.departedAt ? toLocalInput(p.departedAt) : "",
         }}
       />
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <DeletePatientButton stationId={station.id} patientId={p.id} />
+      </div>
     </div>
   );
 }

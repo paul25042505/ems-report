@@ -51,6 +51,17 @@ export async function savePatient(
   redirect(`/station/${station.id}?saved=${existing ? "updated" : "created"}`);
 }
 
+/** 刪除傷患紀錄；刪除前的完整內容寫入操作紀錄，誤刪時可查回 */
+export async function deletePatient(stationId: string, patientId: string) {
+  const { actor, station } = await getStationContext(stationId);
+  const existing = await repo.getPatient(patientId);
+  if (!existing || existing.stationId !== station.id) return;
+  await repo.deletePatient(patientId);
+  await audit(actor, "刪除傷患紀錄", "Patient", patientId, existing);
+  await touch(station.id);
+  redirect(`/station/${station.id}?saved=deleted`);
+}
+
 export async function setStationStatus(stationId: string, formData: FormData) {
   const { actor, station } = await getStationContext(stationId);
   const parsed = parseForm(stationStatusSchema, formData);
