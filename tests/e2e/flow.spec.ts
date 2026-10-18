@@ -17,8 +17,12 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CS
   await enterStation(reporter, "分站A");
 
   await reporter.getByRole("link", { name: "＋ 登記傷患" }).click();
+  await expect(reporter.getByLabel("姓名")).toHaveCount(0); // 選身分前不顯示姓名
+  await choose(reporter, "patientType", "民眾");
+  await reporter.getByLabel("姓名").fill("測試王小明");
   await choose(reporter, "sex", "女");
-  await choose(reporter, "ageGroup", "長者(65+)");
+  await reporter.getByLabel("年齡", { exact: true }).fill("70");
+  await expect(reporter.getByText("已依年齡自動判斷：長者(65+)")).toBeVisible();
   await choose(reporter, "category", "熱傷害（中暑/熱衰竭）");
   await reporter.getByLabel("主訴／症狀描述").fill("E2E測試：意識不清");
   await reporter.getByRole("button", { name: "送出登記" }).click();
@@ -31,11 +35,14 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CS
   await enterCommand(command);
   await command.goto("/command/patients");
   await expect(command.getByText("E2E測試：意識不清")).toBeVisible();
+  await expect(command.getByRole("cell", { name: "測試王小明" })).toBeVisible();
+  await expect(command.getByText("民眾／女／70 歲")).toBeVisible();
   const csv = await command.request.get("/api/export/patients");
   expect(csv.status()).toBe(200);
   const body = await csv.text();
   expect(body.charCodeAt(0)).toBe(0xfeff);
   expect(body).toContain("E2E測試：意識不清");
+  expect(body).toContain("民眾,測試王小明,女,70,長者(65+)");
 
   // 改為後送 → 指揮中心出現後送告警
   await reporter.getByText("E2E測試：意識不清").click();

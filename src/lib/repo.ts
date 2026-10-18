@@ -29,14 +29,18 @@ export type Station = {
   createdAt: Date;
 };
 
-/** 傷患紀錄（去識別化，不收姓名、身分證） */
+/** 傷患紀錄 */
 export type Patient = {
   id: string;
   eventId: string;
   stationId: string;
   arrivedAt: Date;
   patientType: string;
+  /** 姓名（選填） */
+  name: string;
   sex: string;
+  /** 實際年齡（不知道時為 null，只記年齡層） */
+  age: number | null;
   ageGroup: string;
   category: string;
   complaint: string;

@@ -84,7 +84,7 @@ function PatientList({
 }: {
   stationId: string;
   title: string;
-  patients: { id: string; arrivedAt: Date; category: string; disposition: string; complaint: string; hospital: string }[];
+  patients: { id: string; arrivedAt: Date; name?: string; age?: number | null; category: string; disposition: string; complaint: string; hospital: string }[];
   empty: string;
 }) {
   return (
@@ -99,7 +99,10 @@ function PatientList({
               <Link href={`/station/${stationId}/patients/${p.id}`} className="flex items-center gap-3 py-2 hover:bg-slate-50">
                 <span className="w-12 text-sm text-slate-500 tabular-nums">{formatTime(p.arrivedAt)}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{categoryLabel(p.category)}</span>
+                  <span className="block truncate font-semibold">
+                    {p.name && `${p.name}・`}
+                    {categoryLabel(p.category)}
+                  </span>
                   <span className="block truncate text-xs text-slate-500">
                     {p.disposition === "TRANSFERRED" ? `→ ${p.hospital}` : p.complaint}
                   </span>

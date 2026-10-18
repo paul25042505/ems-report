@@ -40,6 +40,13 @@ export const AGE_GROUPS = [
   { value: "SENIOR", label: "長者(65+)" },
 ] as const satisfies readonly Option<string>[];
 export const ageGroupLabel = (v: string) => labelOf(AGE_GROUPS, v);
+/** 依實際年齡判斷年齡層 */
+export function ageGroupOf(age: number): (typeof AGE_GROUPS)[number]["value"] {
+  if (age <= 12) return "CHILD";
+  if (age <= 17) return "TEEN";
+  if (age <= 64) return "ADULT";
+  return "SENIOR";
+}
 
 export const CATEGORIES = [
   { value: "HEAT", label: "熱傷害（中暑/熱衰竭）" },

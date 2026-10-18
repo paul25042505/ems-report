@@ -8,6 +8,7 @@ import {
   REQUEST_TYPES,
   SEXES,
   STATION_STATUS,
+  ageGroupOf,
 } from "./constants";
 import { parseLocalInput } from "./time";
 
@@ -55,8 +56,14 @@ export const patientSchema = z
   .object({
     arrivedAt: localDateTime,
     patientType: pick(PATIENT_TYPES),
+    name: text(30),
     sex: pick(SEXES),
-    ageGroup: pick(AGE_GROUPS),
+    age: z.preprocess(
+      (v) => (v === "" || v === null || v === undefined ? undefined : v),
+      z.coerce.number({ error: "請填數字" }).int("請填整數").min(0, "需介於 0 ~ 120").max(120, "需介於 0 ~ 120").optional(),
+    ),
+    // 有填實際年齡時由年齡自動判斷，沒填才需要快速選擇
+    ageGroup: pick(AGE_GROUPS).optional(),
     category: pick(CATEGORIES),
     complaint: text(500),
     treatment: text(500),
@@ -66,6 +73,12 @@ export const patientSchema = z
     departedAt: optionalLocalDateTime,
     note: text(500),
   })
+  // when：其他欄位有錯時也照樣檢查，讓使用者一次看到所有缺漏
+  .refine((v) => v.age !== undefined || !!v.ageGroup, {
+    path: ["ageGroup"],
+    message: "請輸入年齡或選擇年齡層",
+    when: () => true,
+  })
   .superRefine((v, ctx) => {
     if (v.disposition === "TRANSFERRED" && !v.hospital) {
       ctx.addIssue({ code: "custom", path: ["hospital"], message: "後送請填寫醫院" });
@@ -73,7 +86,13 @@ export const patientSchema = z
     if (v.departedAt && v.departedAt < v.arrivedAt) {
       ctx.addIssue({ code: "custom", path: ["departedAt"], message: "離站時間不可早於到站時間" });
     }
-  });
+  })
+  .transform(({ age, ageGroup, ...rest }) => ({
+    ...rest,
+    age: age ?? null,
+    ageGroup: age !== undefined ? ageGroupOf(age) : ageGroup!,
+  }));
+
 export type PatientInput = z.infer<typeof patientSchema>;
 
 export const stationStatusSchema = z.object({ status: pick(STATION_STATUS) });

@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { savePatient } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
-import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES } from "@/lib/constants";
+import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES, ageGroupLabel, ageGroupOf } from "@/lib/constants";
 
 export type PatientDefaults = {
   arrivedAt: string;
   patientType?: string;
+  name?: string;
   sex?: string;
+  age?: number | null;
   ageGroup?: string;
   category?: string;
   complaint?: string;
@@ -32,6 +34,10 @@ export function PatientForm({
 }) {
   const [state, action, pending] = useActionState(savePatient.bind(null, stationId, patientId), {});
   const [disposition, setDisposition] = useState(defaults.disposition ?? "OBSERVING");
+  const [patientType, setPatientType] = useState(defaults.patientType ?? "");
+  const [age, setAge] = useState(defaults.age == null ? "" : String(defaults.age));
+  const ageNumber = age.trim() === "" ? null : Number(age);
+  const autoAgeGroup = ageNumber !== null && Number.isInteger(ageNumber) && ageNumber >= 0 && ageNumber <= 120 ? ageGroupOf(ageNumber) : null;
 
   return (
     <ActionForm action={action} className="space-y-5">
@@ -40,6 +46,7 @@ export function PatientForm({
         onChange={(e) => {
           const t = e.target as HTMLInputElement;
           if (t.name === "disposition") setDisposition(t.value);
+          if (t.name === "patientType") setPatientType(t.value);
         }}
       >
         <FormMessage state={state} />
@@ -49,17 +56,41 @@ export function PatientForm({
         </Field>
 
         <Field label="身分" name="patientType" state={state}>
-          <ChoiceGroup name="patientType" options={PATIENT_TYPES} defaultValue={defaults.patientType ?? "PUBLIC"} />
+          <ChoiceGroup name="patientType" options={PATIENT_TYPES} defaultValue={defaults.patientType} />
         </Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="性別" name="sex" state={state}>
-            <ChoiceGroup name="sex" options={SEXES} defaultValue={defaults.sex} />
+        {patientType && (
+          <Field label="姓名" name="name" state={state} hint="不知道可留空">
+            <input id="name" name="name" className="input" maxLength={30} defaultValue={defaults.name} autoComplete="off" />
           </Field>
-          <Field label="年齡層" name="ageGroup" state={state}>
-            <ChoiceGroup name="ageGroup" options={AGE_GROUPS} defaultValue={defaults.ageGroup} columns={2} />
-          </Field>
-        </div>
+        )}
+
+        <Field label="性別" name="sex" state={state}>
+          <ChoiceGroup name="sex" options={SEXES} defaultValue={defaults.sex} />
+        </Field>
+
+        <Field label="年齡" name="age" state={state} hint="知道實際年齡請直接輸入；不知道就用下方快速選擇年齡層">
+          <input
+            id="age"
+            name="age"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={120}
+            className="input w-32"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            placeholder="歲"
+          />
+        </Field>
+
+        <Field label="年齡層（快速選擇）" name="ageGroup" state={state}>
+          {autoAgeGroup ? (
+            <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">已依年齡自動判斷：{ageGroupLabel(autoAgeGroup)}</p>
+          ) : (
+            <ChoiceGroup name="ageGroup" options={AGE_GROUPS} defaultValue={defaults.age == null ? defaults.ageGroup : undefined} columns={2} />
+          )}
+        </Field>
 
         <Field label="傷病類別" name="category" state={state}>
           <ChoiceGroup name="category" options={CATEGORIES} defaultValue={defaults.category} columns={2} />

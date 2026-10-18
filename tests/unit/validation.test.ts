@@ -30,7 +30,7 @@ describe("傷患表單驗證", () => {
     const rest: Record<string, string> = { ...basePatient };
     delete rest.sex;
     delete rest.ageGroup;
-    const r = parseForm(patientSchema, fd(rest));
+    const r = parseForm(patientSchema, fd({ ...rest, age: "" })); // 表單沒填年齡時送出空字串
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.state.fieldErrors?.sex).toBeTruthy();
@@ -45,6 +45,34 @@ describe("傷患表單驗證", () => {
       expect(r.state.fieldErrors?.category).toBeTruthy();
       expect(r.state.fieldErrors?.sex).toBeTruthy();
     }
+  });
+
+  it("有填實際年齡時自動判斷年齡層，覆蓋快速選擇", () => {
+    const r = parseForm(patientSchema, fd({ ...basePatient, name: "王小明", age: "70", ageGroup: "CHILD" }));
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.name).toBe("王小明");
+      expect(r.data.age).toBe(70);
+      expect(r.data.ageGroup).toBe("SENIOR");
+    }
+    const kid = parseForm(patientSchema, fd({ ...basePatient, age: "12" }));
+    expect(kid.success && kid.data.ageGroup).toBe("CHILD");
+  });
+
+  it("沒填年齡時用快速選擇，姓名可留空", () => {
+    const r = parseForm(patientSchema, fd(basePatient));
+    expect(r.success && r.data.age).toBeNull();
+    expect(r.success && r.data.ageGroup).toBe("ADULT");
+    expect(r.success && r.data.name).toBe("");
+  });
+
+  it("年齡與年齡層都沒填、或年齡超出範圍時報錯", () => {
+    const rest: Record<string, string> = { ...basePatient };
+    delete rest.ageGroup;
+    const none = parseForm(patientSchema, fd(rest));
+    expect(!none.success && none.state.fieldErrors?.ageGroup).toBe("請輸入年齡或選擇年齡層");
+    const bad = parseForm(patientSchema, fd({ ...basePatient, age: "150" }));
+    expect(!bad.success && bad.state.fieldErrors?.age).toBeTruthy();
   });
 
   it("後送必須填醫院", () => {

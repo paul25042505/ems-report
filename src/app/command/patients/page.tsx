@@ -77,6 +77,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
             <tr>
               <th>到站</th>
               <th>站點</th>
+              <th>姓名</th>
               <th>類別</th>
               <th>身分／性別／年齡</th>
               <th>主訴</th>
@@ -87,7 +88,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
           <tbody>
             {patients.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   沒有符合條件的紀錄
                 </td>
               </tr>
@@ -96,9 +97,10 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
               <tr key={p.id}>
                 <td className="whitespace-nowrap tabular-nums">{formatDateTime(p.arrivedAt)}</td>
                 <td className="whitespace-nowrap">{p.station.name}</td>
+                <td className="whitespace-nowrap">{p.name || "—"}</td>
                 <td className="whitespace-nowrap">{categoryLabel(p.category)}</td>
                 <td className="whitespace-nowrap">
-                  {patientTypeLabel(p.patientType)}／{sexLabel(p.sex)}／{ageGroupLabel(p.ageGroup)}
+                  {patientTypeLabel(p.patientType)}／{sexLabel(p.sex)}／{p.age != null ? `${p.age} 歲` : ageGroupLabel(p.ageGroup)}
                 </td>
                 <td className="min-w-40">{p.complaint}</td>
                 <td className="min-w-40">{p.treatment}</td>
