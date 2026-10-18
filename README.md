@@ -101,7 +101,13 @@ docker compose up -d --build
 - 前面請放 HTTPS 反向代理（Caddy、Nginx 或平台內建）。Session Cookie 在正式環境設為 Secure，純 HTTP 連線無法登入；若只在內網用 HTTP 測試，可設 `INSECURE_COOKIE=1`
 - `PUBLIC_URL` 是 QR Code 內的網址，沒設定時以瀏覽器存取的網址產生
 
-### 雲端平台（如 Zeabur、Render、Fly.io）
+### Render 一鍵部署
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/paul25042505/ems-report)
+
+依 `render.yaml` 建立服務與 1GB 永久磁碟（Starter 方案），過程中只需填 `ADMIN_PASSWORD`；`SESSION_SECRET` 會自動產生。
+
+### 其他雲端平台（如 Zeabur、Fly.io）
 
 用 Dockerfile 部署，設定上面三個環境變數，並掛載一個持久化磁碟到 `/data`。
 
