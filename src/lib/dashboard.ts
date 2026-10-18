@@ -48,7 +48,6 @@ export async function getEventDashboard(eventId: string, now = new Date()) {
     }),
     totals: totals(patients),
     pendingRequests: requests.filter((r) => r.status === "PENDING").length,
-    byTriage: countBy(patients, (p) => p.triage),
     byCategory: countBy(patients, (p) => p.category),
     byDisposition: countBy(patients, (p) => p.disposition),
     byPatientType: countBy(patients, (p) => p.patientType),

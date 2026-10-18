@@ -12,14 +12,13 @@ test("首頁兩個入口，不需登入", async ({ page }) => {
   }
 });
 
-test("站點登記重症傷患 → 指揮中心看到告警並匯出 CSV", async ({ browser }) => {
+test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CSV", async ({ browser }) => {
   const reporter = await browser.newPage();
   await enterStation(reporter, "分站A");
 
   await reporter.getByRole("link", { name: "＋ 登記傷患" }).click();
   await choose(reporter, "sex", "女");
   await choose(reporter, "ageGroup", "長者(65+)");
-  await choose(reporter, "triage", "2級");
   await choose(reporter, "category", "熱傷害（中暑/熱衰竭）");
   await reporter.getByLabel("主訴／症狀描述").fill("E2E測試：意識不清");
   await reporter.getByRole("button", { name: "送出登記" }).click();
@@ -30,8 +29,6 @@ test("站點登記重症傷患 → 指揮中心看到告警並匯出 CSV", async
 
   const command = await browser.newPage();
   await enterCommand(command);
-  await expect(command.getByText("分站A：2級 危急傷患（熱傷害（中暑/熱衰竭））留站中")).toBeVisible();
-
   await command.goto("/command/patients");
   await expect(command.getByText("E2E測試：意識不清")).toBeVisible();
   const csv = await command.request.get("/api/export/patients");
@@ -40,7 +37,7 @@ test("站點登記重症傷患 → 指揮中心看到告警並匯出 CSV", async
   expect(body.charCodeAt(0)).toBe(0xfeff);
   expect(body).toContain("E2E測試：意識不清");
 
-  // 改為後送 → 留站告警消失，出現後送告警
+  // 改為後送 → 指揮中心出現後送告警
   await reporter.getByText("E2E測試：意識不清").click();
   await choose(reporter, "disposition", "後送醫院");
   await reporter.getByRole("button", { name: "儲存修改" }).click();
@@ -52,7 +49,6 @@ test("站點登記重症傷患 → 指揮中心看到告警並匯出 CSV", async
 
   await command.goto("/command");
   await expect(command.getByText(/分站A：後送 E2E醫院/)).toBeVisible();
-  await expect(command.getByText("分站A：2級 危急傷患（熱傷害（中暑/熱衰竭））留站中")).toHaveCount(0);
 });
 
 test("表單缺漏欄位時顯示錯誤，保留已填內容", async ({ page }) => {

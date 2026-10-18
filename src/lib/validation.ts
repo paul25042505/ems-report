@@ -57,7 +57,6 @@ export const patientSchema = z
     patientType: pick(PATIENT_TYPES),
     sex: pick(SEXES),
     ageGroup: pick(AGE_GROUPS),
-    triage: z.coerce.number({ error: "請選擇檢傷分級" }).int().min(1, "請選擇檢傷分級").max(5, "請選擇檢傷分級"),
     category: pick(CATEGORIES),
     complaint: text(500),
     treatment: text(500),

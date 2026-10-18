@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { listEvents } from "@/lib/repo";
 import { getEventDashboard, resolveEvent } from "@/lib/dashboard";
-import { CATEGORIES, TRIAGE_LEVELS, categoryLabel, patientTypeLabel, triageLabel, PATIENT_TYPES } from "@/lib/constants";
+import { CATEGORIES, categoryLabel, patientTypeLabel, PATIENT_TYPES } from "@/lib/constants";
 import { formatAgo } from "@/lib/time";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { StationStatusBadge } from "@/components/badges";
@@ -23,7 +23,6 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
     listEvents(),
   ]);
   const alertStations = new Set(d.alerts.filter((a) => a.level === "danger").map((a) => a.stationId));
-  const triageColor = (k: string) => k === "5" ? "bg-slate-400" : TRIAGE_LEVELS.find((t) => String(t.value) === k)?.color.split(" ")[0] ?? "bg-slate-600";
 
   return (
     <>
@@ -123,8 +122,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
 
       <HourlyChart data={d.hourly} />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <BarList title="檢傷分級" data={d.byTriage} order={TRIAGE_LEVELS.map((t) => t.value)} labelOf={(k) => triageLabel(Number(k))} colorOf={triageColor} />
+      <div className="grid gap-3 md:grid-cols-2">
         <BarList title="傷病類別" data={d.byCategory} order={CATEGORIES.map((c) => c.value)} labelOf={categoryLabel} />
         <BarList title="身分" data={d.byPatientType} order={PATIENT_TYPES.map((c) => c.value)} labelOf={patientTypeLabel} />
       </div>

@@ -12,17 +12,15 @@ const basePatient = {
   patientType: "PUBLIC",
   sex: "F",
   ageGroup: "ADULT",
-  triage: "3",
   category: "HEAT",
   disposition: "OBSERVING",
 };
 
 describe("傷患表單驗證", () => {
-  it("必填欄位齊全即通過，triage 轉成數字", () => {
+  it("必填欄位齊全即通過", () => {
     const r = parseForm(patientSchema, fd(basePatient));
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data.triage).toBe(3);
       expect(r.data.arrivedAt.toISOString()).toBe("2026-10-18T02:00:00.000Z");
       expect(r.data.departedAt).toBeNull();
     }
@@ -31,21 +29,21 @@ describe("傷患表單驗證", () => {
   it("缺少選項時回報對應欄位", () => {
     const rest: Record<string, string> = { ...basePatient };
     delete rest.sex;
-    delete rest.triage;
+    delete rest.ageGroup;
     const r = parseForm(patientSchema, fd(rest));
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.state.fieldErrors?.sex).toBeTruthy();
-      expect(r.state.fieldErrors?.triage).toBeTruthy();
+      expect(r.state.fieldErrors?.ageGroup).toBeTruthy();
     }
   });
 
   it("不合法的選項值被拒絕", () => {
-    const r = parseForm(patientSchema, fd({ ...basePatient, category: "HACK", triage: "9" }));
+    const r = parseForm(patientSchema, fd({ ...basePatient, category: "HACK", sex: "X" }));
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.state.fieldErrors?.category).toBeTruthy();
-      expect(r.state.fieldErrors?.triage).toBeTruthy();
+      expect(r.state.fieldErrors?.sex).toBeTruthy();
     }
   });
 

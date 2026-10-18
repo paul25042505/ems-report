@@ -8,7 +8,6 @@ function patient(over: Partial<PatientLite>): PatientLite {
     id: Math.random().toString(36),
     stationId: "s1",
     arrivedAt: new Date("2026-10-18T05:00:00Z"),
-    triage: 4,
     category: "HEAT",
     disposition: "RELEASED",
     patientType: "PUBLIC",
@@ -29,12 +28,12 @@ const stations = [
 describe("統計", () => {
   it("totals 分類計數", () => {
     const t = totals([
-      patient({ disposition: "OBSERVING", triage: 2 }),
-      patient({ disposition: "TRANSFERRED", triage: 1 }),
+      patient({ disposition: "OBSERVING" }),
+      patient({ disposition: "TRANSFERRED" }),
       patient({ disposition: "RELEASED" }),
       patient({ disposition: "REFUSED" }),
     ]);
-    expect(t).toEqual({ total: 4, observing: 1, transferred: 1, released: 1, refused: 1, critical: 2 });
+    expect(t).toEqual({ total: 4, observing: 1, transferred: 1, released: 1, refused: 1 });
   });
 
   it("每小時統計補上空白時段", () => {
@@ -58,7 +57,7 @@ describe("告警", () => {
       {
         stations,
         patients: [
-          patient({ triage: 2, disposition: "OBSERVING", category: "HEAT" }),
+          patient({ disposition: "OBSERVING", category: "HEAT" }),
           patient({ disposition: "TRANSFERRED", hospital: "台大醫院", departedAt: new Date("2026-10-18T05:45:00Z") }),
           patient({ disposition: "TRANSFERRED", hospital: "舊後送", departedAt: new Date("2026-10-18T03:00:00Z") }),
         ],
@@ -76,9 +75,9 @@ describe("告警", () => {
       now,
     );
     const messages = alerts.map((a) => a.message);
-    expect(alerts.slice(0, 2).every((a) => a.level === "danger")).toBe(true);
+    expect(alerts[0].level).toBe("danger");
+    expect(alerts.filter((a) => a.level === "danger")).toHaveLength(1);
     expect(messages).toContain("分站A：緊急申請「救護車」待處理 — 需救護車");
-    expect(messages.some((m) => m.includes("2級 危急傷患（熱傷害（中暑/熱衰竭））留站中"))).toBe(true);
     expect(messages.some((m) => m.includes("後送 台大醫院"))).toBe(true);
     expect(messages.some((m) => m.includes("舊後送"))).toBe(false); // 超過 30 分鐘
     expect(messages.some((m) => m.includes("冰敷袋 剩 3個"))).toBe(true);

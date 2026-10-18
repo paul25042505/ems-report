@@ -41,18 +41,6 @@ export const AGE_GROUPS = [
 ] as const satisfies readonly Option<string>[];
 export const ageGroupLabel = (v: string) => labelOf(AGE_GROUPS, v);
 
-// 台灣急診五級檢傷分類 (TTAS)
-export const TRIAGE_LEVELS = [
-  { value: 1, label: "1級 復甦急救", short: "1級", color: "bg-blue-700 text-white" },
-  { value: 2, label: "2級 危急", short: "2級", color: "bg-red-600 text-white" },
-  { value: 3, label: "3級 緊急", short: "3級", color: "bg-yellow-400 text-black" },
-  { value: 4, label: "4級 次緊急", short: "4級", color: "bg-green-600 text-white" },
-  { value: 5, label: "5級 非緊急", short: "5級", color: "bg-gray-200 text-black" },
-] as const;
-export const triageLabel = (v: number) => TRIAGE_LEVELS.find((t) => t.value === v)?.label ?? `${v}級`;
-/** 1、2 級視為重症，需要指揮中心立即注意 */
-export const CRITICAL_TRIAGE_MAX = 2;
-
 export const CATEGORIES = [
   { value: "HEAT", label: "熱傷害（中暑/熱衰竭）" },
   { value: "DIZZY", label: "頭暈/暈眩" },

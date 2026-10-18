@@ -38,7 +38,6 @@ export type Patient = {
   patientType: string;
   sex: string;
   ageGroup: string;
-  triage: number;
   category: string;
   complaint: string;
   treatment: string;

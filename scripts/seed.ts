@@ -39,18 +39,18 @@ async function seedDemo() {
 
   const minsAgo = (m: number) => new Date(now.getTime() - m * 60_000);
   const cases = [
-    { s: 0, m: 300, type: "PUBLIC", sex: "F", age: "SENIOR", triage: 3, cat: "HEAT", c: "頭暈、大量出汗", t: "陰涼處休息、冰敷、補充電解質", disp: "RELEASED", dep: 270 },
-    { s: 0, m: 280, type: "PUBLIC", sex: "M", age: "CHILD", triage: 5, cat: "ABRASION", c: "跌倒膝蓋擦傷", t: "傷口清潔、OK繃", disp: "RELEASED", dep: 270 },
-    { s: 1, m: 250, type: "PUBLIC", sex: "M", age: "ADULT", triage: 4, cat: "SPRAIN", c: "右腳踝扭傷", t: "冰敷、彈性繃帶固定", disp: "RELEASED", dep: 225 },
-    { s: 0, m: 220, type: "MILITARY", sex: "M", age: "ADULT", triage: 2, cat: "HEAT", c: "意識模糊、體溫 39.8°C", t: "降溫、建立靜脈管路", disp: "TRANSFERRED", dep: 205, hospital: "國軍示範總醫院", amb: "軍救-01" },
-    { s: 2, m: 200, type: "PUBLIC", sex: "F", age: "TEEN", triage: 5, cat: "INSECT", c: "手臂蚊蟲叮咬紅腫", t: "清潔、塗藥", disp: "RELEASED", dep: 195 },
-    { s: 1, m: 180, type: "PUBLIC", sex: "F", age: "ADULT", triage: 4, cat: "DIZZY", c: "排隊久站頭暈", t: "休息、補充水分", disp: "RELEASED", dep: 160 },
-    { s: 0, m: 150, type: "STAFF", sex: "M", age: "ADULT", triage: 4, cat: "CUT", c: "搬運器材手指割傷", t: "清潔包紮", disp: "RELEASED", dep: 140 },
-    { s: 2, m: 120, type: "PUBLIC", sex: "M", age: "SENIOR", triage: 3, cat: "GI", c: "腹痛、噁心", t: "觀察、建議就醫", disp: "REFUSED", dep: 100 },
-    { s: 1, m: 90, type: "PUBLIC", sex: "F", age: "CHILD", triage: 4, cat: "ALLERGY", c: "食用攤販食物後皮膚起疹", t: "觀察生命徵象", disp: "RELEASED", dep: 60 },
-    { s: 0, m: 60, type: "PUBLIC", sex: "M", age: "ADULT", triage: 3, cat: "HEAT", c: "抽筋、口渴", t: "補充電解質、伸展", disp: "RELEASED", dep: 40 },
-    { s: 0, m: 25, type: "PUBLIC", sex: "F", age: "SENIOR", triage: 2, cat: "DIZZY", c: "突發暈眩、血壓 180/110", t: "平躺、持續監測", disp: "OBSERVING" },
-    { s: 1, m: 15, type: "PUBLIC", sex: "M", age: "TEEN", triage: 4, cat: "ABRASION", c: "滑倒手肘擦傷", t: "清潔包紮", disp: "OBSERVING" },
+    { s: 0, m: 300, type: "PUBLIC", sex: "F", age: "SENIOR", cat: "HEAT", c: "頭暈、大量出汗", t: "陰涼處休息、冰敷、補充電解質", disp: "RELEASED", dep: 270 },
+    { s: 0, m: 280, type: "PUBLIC", sex: "M", age: "CHILD", cat: "ABRASION", c: "跌倒膝蓋擦傷", t: "傷口清潔、OK繃", disp: "RELEASED", dep: 270 },
+    { s: 1, m: 250, type: "PUBLIC", sex: "M", age: "ADULT", cat: "SPRAIN", c: "右腳踝扭傷", t: "冰敷、彈性繃帶固定", disp: "RELEASED", dep: 225 },
+    { s: 0, m: 220, type: "MILITARY", sex: "M", age: "ADULT", cat: "HEAT", c: "意識模糊、體溫 39.8°C", t: "降溫、建立靜脈管路", disp: "TRANSFERRED", dep: 205, hospital: "國軍示範總醫院", amb: "軍救-01" },
+    { s: 2, m: 200, type: "PUBLIC", sex: "F", age: "TEEN", cat: "INSECT", c: "手臂蚊蟲叮咬紅腫", t: "清潔、塗藥", disp: "RELEASED", dep: 195 },
+    { s: 1, m: 180, type: "PUBLIC", sex: "F", age: "ADULT", cat: "DIZZY", c: "排隊久站頭暈", t: "休息、補充水分", disp: "RELEASED", dep: 160 },
+    { s: 0, m: 150, type: "STAFF", sex: "M", age: "ADULT", cat: "CUT", c: "搬運器材手指割傷", t: "清潔包紮", disp: "RELEASED", dep: 140 },
+    { s: 2, m: 120, type: "PUBLIC", sex: "M", age: "SENIOR", cat: "GI", c: "腹痛、噁心", t: "觀察、建議就醫", disp: "REFUSED", dep: 100 },
+    { s: 1, m: 90, type: "PUBLIC", sex: "F", age: "CHILD", cat: "ALLERGY", c: "食用攤販食物後皮膚起疹", t: "觀察生命徵象", disp: "RELEASED", dep: 60 },
+    { s: 0, m: 60, type: "PUBLIC", sex: "M", age: "ADULT", cat: "HEAT", c: "抽筋、口渴", t: "補充電解質、伸展", disp: "RELEASED", dep: 40 },
+    { s: 0, m: 25, type: "PUBLIC", sex: "F", age: "SENIOR", cat: "DIZZY", c: "突發暈眩、血壓 180/110", t: "平躺、持續監測", disp: "OBSERVING" },
+    { s: 1, m: 15, type: "PUBLIC", sex: "M", age: "TEEN", cat: "ABRASION", c: "滑倒手肘擦傷", t: "清潔包紮", disp: "OBSERVING" },
   ] as const;
   for (const c of cases) {
     await repo.createPatient({
@@ -60,7 +60,6 @@ async function seedDemo() {
       patientType: c.type,
       sex: c.sex,
       ageGroup: c.age,
-      triage: c.triage,
       category: c.cat,
       complaint: c.c,
       treatment: c.t,

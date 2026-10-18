@@ -4,14 +4,13 @@ import { findPatients, type PatientFilter } from "@/lib/patient-query";
 import {
   CATEGORIES,
   DISPOSITIONS,
-  TRIAGE_LEVELS,
   ageGroupLabel,
   categoryLabel,
   patientTypeLabel,
   sexLabel,
 } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
-import { DispositionBadge, TriageBadge } from "@/components/badges";
+import { DispositionBadge } from "@/components/badges";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { NoEvent } from "../no-event";
 
@@ -43,21 +42,13 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
         </div>
       </div>
 
-      <form className="card grid grid-cols-2 gap-3 md:grid-cols-5" method="get">
+      <form className="card grid grid-cols-2 gap-3 md:grid-cols-4" method="get">
         <input type="hidden" name="event" value={event.id} />
         <select name="station" defaultValue={filter.station ?? ""} className="input" aria-label="站點">
           <option value="">全部站點</option>
           {stations.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
-            </option>
-          ))}
-        </select>
-        <select name="triage" defaultValue={filter.triage ?? ""} className="input" aria-label="檢傷分級">
-          <option value="">全部檢傷</option>
-          {TRIAGE_LEVELS.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
             </option>
           ))}
         </select>
@@ -86,7 +77,6 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
             <tr>
               <th>到站</th>
               <th>站點</th>
-              <th>檢傷</th>
               <th>類別</th>
               <th>身分／性別／年齡</th>
               <th>主訴</th>
@@ -97,7 +87,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
           <tbody>
             {patients.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-slate-500">
+                <td colSpan={7} className="py-6 text-center text-slate-500">
                   沒有符合條件的紀錄
                 </td>
               </tr>
@@ -106,9 +96,6 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
               <tr key={p.id}>
                 <td className="whitespace-nowrap tabular-nums">{formatDateTime(p.arrivedAt)}</td>
                 <td className="whitespace-nowrap">{p.station.name}</td>
-                <td>
-                  <TriageBadge level={p.triage} />
-                </td>
                 <td className="whitespace-nowrap">{categoryLabel(p.category)}</td>
                 <td className="whitespace-nowrap">
                   {patientTypeLabel(p.patientType)}／{sexLabel(p.sex)}／{ageGroupLabel(p.ageGroup)}

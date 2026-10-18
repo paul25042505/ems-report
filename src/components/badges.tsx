@@ -1,16 +1,10 @@
 import {
-  TRIAGE_LEVELS,
   dispositionLabel,
   requestStatusLabel,
   stationStatusLabel,
 } from "@/lib/constants";
 
 const pill = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold whitespace-nowrap";
-
-export function TriageBadge({ level }: { level: number }) {
-  const t = TRIAGE_LEVELS.find((x) => x.value === level);
-  return <span className={`${pill} ${t?.color ?? "bg-gray-200"}`}>{t?.short ?? `${level}級`}</span>;
-}
 
 const STATION_COLORS: Record<string, string> = {
   OPEN: "bg-green-100 text-green-800",

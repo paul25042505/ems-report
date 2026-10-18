@@ -9,7 +9,6 @@ import {
   dispositionLabel,
   patientTypeLabel,
   sexLabel,
-  triageLabel,
 } from "@/lib/constants";
 import { toCsv } from "@/lib/summary";
 import { formatDateTime, toLocalDateInput } from "@/lib/time";
@@ -21,14 +20,13 @@ export async function GET(req: NextRequest) {
 
   const patients = await findPatients(event.id, filter);
   const rows: unknown[][] = [
-    ["到站時間", "站點", "身分", "性別", "年齡層", "檢傷分級", "傷病類別", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
+    ["到站時間", "站點", "身分", "性別", "年齡層", "傷病類別", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
     ...patients.map((p) => [
       formatDateTime(p.arrivedAt),
       p.station.name,
       patientTypeLabel(p.patientType),
       sexLabel(p.sex),
       ageGroupLabel(p.ageGroup),
-      triageLabel(p.triage),
       categoryLabel(p.category),
       p.complaint,
       p.treatment,

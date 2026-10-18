@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { listPatientsByStation } from "@/lib/repo";
 import { getStationContext } from "@/lib/context";
-import { STATION_STATUS, categoryLabel, triageLabel } from "@/lib/constants";
+import { STATION_STATUS, categoryLabel } from "@/lib/constants";
 import { totals } from "@/lib/summary";
 import { formatAgo, formatTime, startOfLocalDay } from "@/lib/time";
-import { DispositionBadge, StationStatusBadge, TriageBadge } from "@/components/badges";
+import { DispositionBadge, StationStatusBadge } from "@/components/badges";
 import { StatTile } from "@/components/charts";
 import { heartbeat, setStationStatus } from "./actions";
 
@@ -84,7 +84,7 @@ function PatientList({
 }: {
   stationId: string;
   title: string;
-  patients: { id: string; arrivedAt: Date; triage: number; category: string; disposition: string; complaint: string; hospital: string }[];
+  patients: { id: string; arrivedAt: Date; category: string; disposition: string; complaint: string; hospital: string }[];
   empty: string;
 }) {
   return (
@@ -96,9 +96,8 @@ function PatientList({
         <ul className="divide-y divide-slate-100">
           {patients.map((p) => (
             <li key={p.id}>
-              <Link href={`/station/${stationId}/patients/${p.id}`} className="flex items-center gap-3 py-2 hover:bg-slate-50" aria-label={`${triageLabel(p.triage)} ${categoryLabel(p.category)}`}>
+              <Link href={`/station/${stationId}/patients/${p.id}`} className="flex items-center gap-3 py-2 hover:bg-slate-50">
                 <span className="w-12 text-sm text-slate-500 tabular-nums">{formatTime(p.arrivedAt)}</span>
-                <TriageBadge level={p.triage} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{categoryLabel(p.category)}</span>
                   <span className="block truncate text-xs text-slate-500">

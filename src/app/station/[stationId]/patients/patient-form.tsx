@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { savePatient } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
-import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES, TRIAGE_LEVELS } from "@/lib/constants";
+import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES } from "@/lib/constants";
 
 export type PatientDefaults = {
   arrivedAt: string;
   patientType?: string;
   sex?: string;
   ageGroup?: string;
-  triage?: number;
   category?: string;
   complaint?: string;
   treatment?: string;
@@ -21,8 +20,6 @@ export type PatientDefaults = {
   departedAt?: string;
   note?: string;
 };
-
-const triageColor = (v: number) => TRIAGE_LEVELS.find((t) => t.value === v)?.color ?? "";
 
 export function PatientForm({
   stationId,
@@ -63,16 +60,6 @@ export function PatientForm({
             <ChoiceGroup name="ageGroup" options={AGE_GROUPS} defaultValue={defaults.ageGroup} columns={2} />
           </Field>
         </div>
-
-        <Field label="檢傷分級（TTAS）" name="triage" state={state} hint="1級復甦急救、2級危急、3級緊急、4級次緊急、5級非緊急">
-          <ChoiceGroup
-            name="triage"
-            options={TRIAGE_LEVELS.map((t) => ({ value: t.value, label: t.short }))}
-            defaultValue={defaults.triage}
-            columns={5}
-            colorOf={triageColor}
-          />
-        </Field>
 
         <Field label="傷病類別" name="category" state={state}>
           <ChoiceGroup name="category" options={CATEGORIES} defaultValue={defaults.category} columns={2} />

@@ -1,12 +1,11 @@
 // 純計算函式（不碰資料庫），供看板、成果報告與單元測試共用。
-import { CRITICAL_TRIAGE_MAX, STALE_REPORT_MINUTES, stationStatusLabel, triageLabel, categoryLabel, requestTypeLabel } from "./constants";
+import { STALE_REPORT_MINUTES, stationStatusLabel, requestTypeLabel } from "./constants";
 import { hourKey, minutesSince } from "./time";
 
 export type PatientLite = {
   id: string;
   stationId: string;
   arrivedAt: Date;
-  triage: number;
   category: string;
   disposition: string;
   patientType: string;
@@ -26,7 +25,6 @@ export type Totals = {
   transferred: number;
   released: number;
   refused: number;
-  critical: number;
 };
 
 export function countBy<T>(items: T[], key: (item: T) => string | number) {
@@ -45,7 +43,6 @@ export function totals(patients: PatientLite[]): Totals {
     transferred: patients.filter((p) => p.disposition === "TRANSFERRED").length,
     released: patients.filter((p) => p.disposition === "RELEASED").length,
     refused: patients.filter((p) => p.disposition === "REFUSED").length,
-    critical: patients.filter((p) => p.triage <= CRITICAL_TRIAGE_MAX).length,
   };
 }
 
@@ -89,21 +86,11 @@ export function computeAlerts(
   }
 
   for (const p of input.patients) {
-    if (p.triage <= CRITICAL_TRIAGE_MAX && p.disposition === "OBSERVING") {
-      alerts.push({
-        level: "danger",
-        stationId: p.stationId,
-        message: `${name.get(p.stationId)}：${triageLabel(p.triage)}傷患（${categoryLabel(p.category)}）留站中`,
-      });
-    }
-  }
-
-  for (const p of input.patients) {
     if (p.disposition === "TRANSFERRED" && minutesSince(p.departedAt ?? p.arrivedAt, now) <= 30) {
       alerts.push({
         level: "warning",
         stationId: p.stationId,
-        message: `${name.get(p.stationId)}：後送 ${p.hospital || "醫院"}（${triageLabel(p.triage)}）`,
+        message: `${name.get(p.stationId)}：後送 ${p.hospital || "醫院"}`,
       });
     }
   }

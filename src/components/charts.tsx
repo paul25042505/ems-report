@@ -5,15 +5,12 @@ export function BarList({
   data,
   labelOf,
   order,
-  colorOf,
 }: {
   title: string;
   data: Record<string, number>;
   labelOf: (key: string) => string;
   /** 固定顯示順序（含 0 的項目）；省略時依數量排序 */
   order?: readonly (string | number)[];
-  /** 有語意的顏色（例如檢傷分級），省略時使用單一中性色 */
-  colorOf?: (key: string) => string;
 }) {
   const keys = order ? order.map(String) : Object.keys(data).sort((a, b) => data[b] - data[a]);
   const max = Math.max(1, ...keys.map((k) => data[k] ?? 0));
@@ -32,7 +29,7 @@ export function BarList({
                 <span className="truncate text-slate-700">{labelOf(k)}</span>
                 <span className="h-4 rounded-sm bg-slate-100">
                   <span
-                    className={`block h-4 rounded-r ${colorOf ? colorOf(k) : "bg-slate-600"}`}
+                    className="block h-4 rounded-r bg-slate-600"
                     style={{ width: `${(v / max) * 100}%` }}
                   />
                 </span>
