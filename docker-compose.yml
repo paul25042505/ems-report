@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?請在 .env 設定 SESSION_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?請在 .env 設定 ADMIN_PASSWORD}
+      # 選填：QR Code 使用的對外網址，例如 https://ems.example.com
+      PUBLIC_URL: ${PUBLIC_URL:-}
+    volumes:
+      - ems-data:/data
+    restart: unless-stopped
+
+volumes:
+  ems-data:

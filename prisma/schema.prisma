@@ -1,0 +1,138 @@
+// 國防知性之旅 救護站資訊回報系統 資料模型
+// SQLite 不支援 enum，選項值以字串儲存，合法值定義於 src/lib/constants.ts 並由 zod 驗證。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 活動場次（例：2026 國防知性之旅－XX營區）
+model Event {
+  id        String    @id @default(cuid())
+  name      String
+  venue     String    @default("")
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  stations  Station[]
+}
+
+/// 救護站（主站、分站…）
+model Station {
+  id           String           @id @default(cuid())
+  eventId      String
+  event        Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String
+  location     String           @default("")
+  lat          Float?
+  lng          Float?
+  /// OPEN | PAUSED | CLOSED
+  status       String           @default("OPEN")
+  contactName  String           @default("")
+  contactPhone String           @default("")
+  /// QR Code 登入用代碼，重新產生後舊的 QR Code 與已登入的裝置即失效
+  joinToken    String           @unique @default(cuid())
+  lastReportAt DateTime?
+  createdAt    DateTime         @default(now())
+  patients     Patient[]
+  supplies     Supply[]
+  requests     SupportRequest[]
+
+  @@index([eventId])
+}
+
+/// 指揮中心／管理員帳號（站點人員以 QR Code 登入，不需帳號）
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  passwordHash String
+  /// ADMIN | COMMAND
+  role         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+/// 傷患紀錄（去識別化，不收姓名、身分證）
+model Patient {
+  id           String    @id @default(cuid())
+  stationId    String
+  station      Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  arrivedAt    DateTime
+  /// PUBLIC | MILITARY | STAFF
+  patientType  String
+  /// M | F | U
+  sex          String
+  /// CHILD | TEEN | ADULT | SENIOR
+  ageGroup     String
+  /// TTAS 1-5
+  triage       Int
+  /// HEAT | DIZZY | ABRASION | SPRAIN | CUT | INSECT | GI | ALLERGY | OTHER
+  category     String
+  complaint    String    @default("")
+  treatment    String    @default("")
+  /// OBSERVING | RELEASED | TRANSFERRED | REFUSED
+  disposition  String
+  hospital     String    @default("")
+  ambulance    String    @default("")
+  departedAt   DateTime?
+  note         String    @default("")
+  reporterName String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([stationId, arrivedAt])
+}
+
+/// 物資存量
+model Supply {
+  id        String   @id @default(cuid())
+  stationId String
+  station   Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  name      String
+  unit      String   @default("")
+  quantity  Int      @default(0)
+  threshold Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([stationId, name])
+}
+
+/// 支援申請
+model SupportRequest {
+  id           String   @id @default(cuid())
+  stationId    String
+  station      Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  /// STAFF | SUPPLY | AMBULANCE | OTHER
+  type         String
+  content      String
+  urgent       Boolean  @default(false)
+  /// PENDING | IN_PROGRESS | DONE
+  status       String   @default("PENDING")
+  reporterName String
+  handlerName  String   @default("")
+  response     String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([stationId, status])
+}
+
+/// 操作紀錄
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  role      String
+  action    String
+  entity    String
+  entityId  String   @default("")
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

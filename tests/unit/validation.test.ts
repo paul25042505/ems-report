@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+import { parseForm, patientSchema, requestSchema, stationSchema } from "@/lib/validation";
+
+function fd(obj: Record<string, string>) {
+  const f = new FormData();
+  for (const [k, v] of Object.entries(obj)) f.append(k, v);
+  return f;
+}
+
+const basePatient = {
+  arrivedAt: "2026-10-18T10:00",
+  patientType: "PUBLIC",
+  sex: "F",
+  ageGroup: "ADULT",
+  triage: "3",
+  category: "HEAT",
+  disposition: "OBSERVING",
+};
+
+describe("傷患表單驗證", () => {
+  it("必填欄位齊全即通過，triage 轉成數字", () => {
+    const r = parseForm(patientSchema, fd(basePatient));
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.triage).toBe(3);
+      expect(r.data.arrivedAt.toISOString()).toBe("2026-10-18T02:00:00.000Z");
+      expect(r.data.departedAt).toBeNull();
+    }
+  });
+
+  it("缺少選項時回報對應欄位", () => {
+    const rest: Record<string, string> = { ...basePatient };
+    delete rest.sex;
+    delete rest.triage;
+    const r = parseForm(patientSchema, fd(rest));
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.state.fieldErrors?.sex).toBeTruthy();
+      expect(r.state.fieldErrors?.triage).toBeTruthy();
+    }
+  });
+
+  it("不合法的選項值被拒絕", () => {
+    const r = parseForm(patientSchema, fd({ ...basePatient, category: "HACK", triage: "9" }));
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.state.fieldErrors?.category).toBeTruthy();
+      expect(r.state.fieldErrors?.triage).toBeTruthy();
+    }
+  });
+
+  it("後送必須填醫院", () => {
+    const r = parseForm(patientSchema, fd({ ...basePatient, disposition: "TRANSFERRED" }));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.state.fieldErrors?.hospital).toBe("後送請填寫醫院");
+    expect(parseForm(patientSchema, fd({ ...basePatient, disposition: "TRANSFERRED", hospital: "台大醫院" })).success).toBe(true);
+  });
+
+  it("離站時間不可早於到站時間", () => {
+    const r = parseForm(patientSchema, fd({ ...basePatient, disposition: "RELEASED", departedAt: "2026-10-18T09:00" }));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.state.fieldErrors?.departedAt).toBeTruthy();
+  });
+});
+
+describe("其他表單", () => {
+  it("緊急勾選框轉成布林", () => {
+    const on = parseForm(requestSchema, fd({ type: "SUPPLY", content: "水 2 箱", urgent: "on" }));
+    const off = parseForm(requestSchema, fd({ type: "SUPPLY", content: "水 2 箱" }));
+    expect(on.success && on.data.urgent).toBe(true);
+    expect(off.success && off.data.urgent).toBe(false);
+  });
+
+  it("站點經緯度可留空，填寫時需在範圍內", () => {
+    const empty = parseForm(stationSchema, fd({ name: "主站", lat: "", lng: "", status: "OPEN" }));
+    expect(empty.success && empty.data.lat).toBeUndefined();
+    const bad = parseForm(stationSchema, fd({ name: "主站", lat: "123", lng: "121.5", status: "OPEN" }));
+    expect(bad.success).toBe(false);
+  });
+});
