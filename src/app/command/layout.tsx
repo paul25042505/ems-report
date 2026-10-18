@@ -1,11 +1,9 @@
-import { AppHeader } from "@/components/app-header";
-import { requireRole } from "@/lib/auth";
+import { AppHeader, COMMAND_NAV } from "@/components/app-header";
 
-export default async function CommandLayout({ children }: { children: React.ReactNode }) {
-  const session = await requireRole("COMMAND", "ADMIN");
+export default function CommandLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AppHeader session={session} subtitle="指揮中心" />
+      <AppHeader subtitle="指揮中心" nav={COMMAND_NAV} />
       <main className="mx-auto max-w-6xl space-y-4 p-4">{children}</main>
     </>
   );

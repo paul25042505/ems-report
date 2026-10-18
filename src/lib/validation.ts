@@ -51,15 +51,6 @@ const optionalNumber = (min: number, max: number) =>
 
 const checkbox = z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean());
 
-export const loginSchema = z.object({
-  username: required(50, "請輸入帳號"),
-  password: z.string().min(1, "請輸入密碼").max(200),
-});
-
-export const joinSchema = z.object({
-  reporterName: required(30, "請輸入您的稱呼或代號"),
-});
-
 export const patientSchema = z
   .object({
     arrivedAt: localDateTime,
@@ -129,21 +120,6 @@ export const stationSchema = z.object({
   contactName: text(30),
   contactPhone: text(30),
   status: pick(STATION_STATUS),
-});
-
-export const userCreateSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .regex(/^[a-zA-Z0-9_.-]{3,30}$/, "帳號限英數字與 _ . -，3~30 字"),
-  displayName: required(30, "請輸入顯示名稱"),
-  role: z.enum(["ADMIN", "COMMAND"], { error: "請選擇角色" }),
-  password: z.string().min(8, "密碼至少 8 碼").max(200),
-});
-
-export const passwordResetSchema = z.object({
-  id: z.string().min(1),
-  password: z.string().min(8, "密碼至少 8 碼").max(200),
 });
 
 export type ActionState = {

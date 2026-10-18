@@ -11,3 +11,4 @@ next-env.d.ts
 /playwright-report/
 /coverage/
 .DS_Store
+firestore-debug.log

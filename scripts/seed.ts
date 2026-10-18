@@ -1,16 +1,7 @@
-// 用法（需先設定 FIRESTORE_EMULATOR_HOST 指向模擬器，或在可存取 Firestore 的環境執行）：
-//   npm run db:seed        若沒有任何帳號，依 ADMIN_USERNAME / ADMIN_PASSWORD 建立管理員
-//   npm run db:seed:demo   另外建立示範場次、3 個救護站、示範傷患與申請（開發／教育訓練用）
-// 正式環境不需要執行：第一次登入時會自動建立初始管理員。
-import bcrypt from "bcryptjs";
-import { ensureInitialAdmin } from "../src/lib/bootstrap";
+// 建立示範場次、3 個救護站、示範傷患與申請（開發／教育訓練用）。
+// 需先設定 FIRESTORE_EMULATOR_HOST 指向模擬器：npm run dev 會自動處理。
 import { DEFAULT_SUPPLIES } from "../src/lib/constants";
 import * as repo from "../src/lib/repo";
-
-async function ensureAdmin() {
-  if (await ensureInitialAdmin()) console.log(`已建立管理員帳號：${process.env.ADMIN_USERNAME || "admin"}`);
-  else if (!(await repo.hasAnyUser())) throw new Error("請設定 ADMIN_PASSWORD（至少 8 碼）以建立初始管理員");
-}
 
 async function seedDemo() {
   if ((await repo.listEvents()).some((e) => e.name.includes("示範"))) {
@@ -18,7 +9,6 @@ async function seedDemo() {
     return;
   }
 
-  await repo.createUser({ username: "command", displayName: "指揮官（示範）", role: "COMMAND", passwordHash: await bcrypt.hash("command1234", 10) });
 
   const now = new Date();
   const eventId = await repo.createEvent({
@@ -85,19 +75,12 @@ async function seedDemo() {
 
   await repo.createRequest({ eventId, stationId: stations[1].id, type: "SUPPLY", content: "運動飲料 2 箱", urgent: false, reporterName: defs[1].contactName });
   const doneId = await repo.createRequest({ eventId, stationId: stations[0].id, type: "STAFF", content: "午後人潮多，需要 1 名人力支援", urgent: false, reporterName: defs[0].contactName });
-  await repo.updateRequest(doneId, { status: "DONE", handlerName: "指揮官（示範）", response: "已調派預備組 1 人" });
+  await repo.updateRequest(doneId, { status: "DONE", handlerName: "指揮中心", response: "已調派預備組 1 人" });
 
-  console.log("已建立示範資料。站點 QR 登入網址：");
-  for (const s of stations) console.log(`  ${s.name}: /join/${s.joinToken}`);
-  console.log("示範帳號：command / command1234（指揮中心）");
+  console.log(`已建立示範資料：${stations.map((s) => s.name).join("、")}`);
 }
 
-async function main() {
-  await ensureAdmin();
-  if (process.argv.includes("--demo")) await seedDemo();
-}
-
-main()
+seedDemo()
   .then(() => process.exit(0))
   .catch((e) => {
     console.error(e);

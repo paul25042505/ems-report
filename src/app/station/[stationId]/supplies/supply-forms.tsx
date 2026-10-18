@@ -1,11 +1,17 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { addSupply, updateSupplyQuantity } from "@/app/station/actions";
+import { addSupply, updateSupplyQuantity } from "../actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 
-export function SupplyRow({ supply }: { supply: { id: string; name: string; unit: string; quantity: number; threshold: number } }) {
-  const [state, action, pending] = useActionState(updateSupplyQuantity, {});
+export function SupplyRow({
+  stationId,
+  supply,
+}: {
+  stationId: string;
+  supply: { id: string; name: string; unit: string; quantity: number; threshold: number };
+}) {
+  const [state, action, pending] = useActionState(updateSupplyQuantity.bind(null, stationId), {});
   const [qty, setQty] = useState(supply.quantity);
   const low = qty <= supply.threshold;
   const dirty = qty !== supply.quantity;
@@ -58,8 +64,8 @@ export function SupplyRow({ supply }: { supply: { id: string; name: string; unit
   );
 }
 
-export function AddSupplyForm() {
-  const [state, action, pending] = useActionState(addSupply, {});
+export function AddSupplyForm({ stationId }: { stationId: string }) {
+  const [state, action, pending] = useActionState(addSupply.bind(null, stationId), {});
   return (
     <ActionForm action={action} resetOn={state} className="space-y-3">
       <FormMessage state={state} />

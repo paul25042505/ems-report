@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { savePatient } from "@/app/station/actions";
+import { savePatient } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES, TRIAGE_LEVELS } from "@/lib/constants";
 
@@ -24,8 +24,16 @@ export type PatientDefaults = {
 
 const triageColor = (v: number) => TRIAGE_LEVELS.find((t) => t.value === v)?.color ?? "";
 
-export function PatientForm({ patientId, defaults }: { patientId: string | null; defaults: PatientDefaults }) {
-  const [state, action, pending] = useActionState(savePatient.bind(null, patientId), {});
+export function PatientForm({
+  stationId,
+  patientId,
+  defaults,
+}: {
+  stationId: string;
+  patientId: string | null;
+  defaults: PatientDefaults;
+}) {
+  const [state, action, pending] = useActionState(savePatient.bind(null, stationId, patientId), {});
   const [disposition, setDisposition] = useState(defaults.disposition ?? "OBSERVING");
 
   return (
@@ -105,7 +113,7 @@ export function PatientForm({ patientId, defaults }: { patientId: string | null;
       </div>
 
       <div className="sticky bottom-0 -mx-4 flex gap-2 border-t border-slate-200 bg-slate-100/95 px-4 py-3">
-        <Link href="/station" className="btn-secondary flex-1">
+        <Link href={`/station/${stationId}`} className="btn-secondary flex-1">
           取消
         </Link>
         <SubmitButton className="btn-primary flex-[2]" pending={pending} pendingText="儲存中…">

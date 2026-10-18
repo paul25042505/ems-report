@@ -19,15 +19,12 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npx firebase emulators:exec --only firestore --project demo-ems "npx tsx scripts/seed.ts --demo && npx next build && npx next start -p ${PORT}"`,
-    url: `http://localhost:${PORT}/login`,
+    command: `npx firebase emulators:exec --only firestore --project demo-ems "npx tsx scripts/seed.ts && npx next build && npx next start -p ${PORT}"`,
+    url: `http://localhost:${PORT}/`,
     timeout: 300_000,
     reuseExistingServer: false,
     env: {
       ...EMULATOR,
-      SESSION_SECRET: "e2e-test-secret-0123456789-abcdefghijklmnopqrstuvwxyz",
-      ADMIN_USERNAME: "admin",
-      ADMIN_PASSWORD: "admin1234",
     },
   },
 });

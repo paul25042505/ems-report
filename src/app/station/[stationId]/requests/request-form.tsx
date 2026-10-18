@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { createRequest } from "@/app/station/actions";
+import { createRequest } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { REQUEST_TYPES } from "@/lib/constants";
 
-export function RequestForm() {
-  const [state, action, pending] = useActionState(createRequest, {});
+export function RequestForm({ stationId }: { stationId: string }) {
+  const [state, action, pending] = useActionState(createRequest.bind(null, stationId), {});
 
   return (
     <ActionForm action={action} resetOn={state} className="space-y-4">

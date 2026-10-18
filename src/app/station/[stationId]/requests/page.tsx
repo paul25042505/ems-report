@@ -1,20 +1,21 @@
 import { listRequestsByStation } from "@/lib/repo";
-import { requireReporter } from "@/lib/auth";
+import { getStationContext } from "@/lib/context";
 import { requestTypeLabel } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 import { RequestStatusBadge } from "@/components/badges";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { RequestForm } from "./request-form";
 
-export default async function StationRequestsPage() {
-  const { station } = await requireReporter();
+export default async function StationRequestsPage({ params }: { params: Promise<{ stationId: string }> }) {
+  const { stationId } = await params;
+  const { station } = await getStationContext(stationId);
   const requests = await listRequestsByStation(station.id);
 
   return (
     <>
       <section className="card">
         <h1 className="mb-3">提出支援申請</h1>
-        <RequestForm />
+        <RequestForm stationId={station.id} />
       </section>
       <section className="card">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

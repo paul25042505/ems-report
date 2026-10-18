@@ -92,13 +92,12 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
               <th>主訴</th>
               <th>處置</th>
               <th>去向</th>
-              <th>登記人</th>
             </tr>
           </thead>
           <tbody>
             {patients.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   沒有符合條件的紀錄
                 </td>
               </tr>
@@ -124,7 +123,6 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap">{p.reporterName}</td>
               </tr>
             ))}
           </tbody>

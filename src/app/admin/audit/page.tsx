@@ -1,5 +1,5 @@
 import { listAuditLogs } from "@/lib/repo";
-import { ROLE_LABELS, type Role } from "@/lib/constants";
+import { ROLE_LABELS } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function AuditPage() {
               <td className="whitespace-nowrap tabular-nums">{formatDateTime(l.createdAt)}</td>
               <td className="whitespace-nowrap">
                 {l.actor}
-                <span className="block text-xs text-slate-500">{ROLE_LABELS[l.role as Role] ?? l.role}</span>
+                <span className="block text-xs text-slate-500">{ROLE_LABELS[l.role] ?? l.role}</span>
               </td>
               <td className="whitespace-nowrap">{l.action}</td>
               <td className="font-mono text-xs whitespace-nowrap">{l.entity}</td>

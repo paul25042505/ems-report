@@ -6,12 +6,9 @@ function labelOf<T extends string | number>(options: readonly Option<T>[], value
   return options.find((o) => o.value === value)?.label ?? String(value);
 }
 
-export const ROLES = ["ADMIN", "COMMAND", "REPORTER"] as const;
-export type Role = (typeof ROLES)[number];
-export const ROLE_LABELS: Record<Role, string> = {
-  ADMIN: "系統管理員",
+export const ROLE_LABELS: Record<string, string> = {
+  STATION: "站點",
   COMMAND: "指揮中心",
-  REPORTER: "站點回報員",
 };
 
 export const STATION_STATUS = [

@@ -1,24 +1,17 @@
 import { expect, type Page } from "@playwright/test";
-import { firestore } from "../../src/lib/firestore";
 
-export async function stationToken(name: string) {
-  const snap = await firestore.collection("stations").where("name", "==", name).limit(1).get();
-  if (snap.empty) throw new Error(`找不到站點 ${name}`);
-  return snap.docs[0].get("joinToken") as string;
+/** 從首頁點「站點人員」→ 點選救護站 */
+export async function enterStation(page: Page, stationName: string) {
+  await page.goto("/");
+  await page.getByRole("link", { name: "站點人員" }).click();
+  await page.getByRole("link", { name: new RegExp(`^${stationName}`) }).click();
+  await expect(page.getByRole("heading", { name: stationName, exact: true })).toBeVisible();
 }
 
-export async function joinAs(page: Page, stationName: string, reporter: string) {
-  await page.goto(`/join/${await stationToken(stationName)}`);
-  await page.getByLabel("您的稱呼或代號").fill(reporter);
-  await page.getByRole("button", { name: "進入站點" }).click();
-  await expect(page).toHaveURL(/\/station$/);
-}
-
-export async function loginAs(page: Page, username: string, password: string) {
-  await page.goto("/login");
-  await page.getByLabel("帳號").fill(username);
-  await page.getByLabel("密碼").fill(password);
-  await page.getByRole("button", { name: "登入" }).click();
+/** 從首頁點「指揮中心」 */
+export async function enterCommand(page: Page) {
+  await page.goto("/");
+  await page.getByRole("link", { name: "指揮中心" }).click();
   await expect(page).toHaveURL(/\/command$/);
 }
 

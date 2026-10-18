@@ -1,108 +1,42 @@
 import Link from "next/link";
-import { listPatientsByStation } from "@/lib/repo";
-import { requireReporter } from "@/lib/auth";
-import { STATION_STATUS, categoryLabel, triageLabel } from "@/lib/constants";
-import { totals } from "@/lib/summary";
-import { formatAgo, formatTime, startOfLocalDay } from "@/lib/time";
-import { DispositionBadge, StationStatusBadge, TriageBadge } from "@/components/badges";
-import { StatTile } from "@/components/charts";
-import { heartbeat, setStationStatus } from "./actions";
+import { getActiveEvent } from "@/lib/dashboard";
+import { listStations } from "@/lib/repo";
+import { StationStatusBadge } from "@/components/badges";
 
-export default async function StationHome({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await searchParams;
-  const { station } = await requireReporter();
-  const patients = await listPatientsByStation(station.id);
-  const today = startOfLocalDay(new Date());
-  const todays = patients.filter((p) => p.arrivedAt >= today);
-  const t = totals(todays);
-  const observing = patients.filter((p) => p.disposition === "OBSERVING");
-  const others = patients.filter((p) => p.disposition !== "OBSERVING");
+export const dynamic = "force-dynamic";
+
+export default async function StationPicker() {
+  const event = await getActiveEvent();
+  const stations = event ? await listStations(event.id) : [];
 
   return (
-    <>
-      {saved && (
-        <p role="status" className="rounded-lg bg-green-50 px-3 py-2 font-semibold text-green-800 ring-1 ring-green-200">
-          ✓ {saved === "updated" ? "紀錄已更新" : "已完成登記"}
-        </p>
-      )}
-
-      <section className="card space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h1 className="text-2xl">{station.name}</h1>
-            <p className="text-sm text-slate-600">{station.location}</p>
-          </div>
-          <StationStatusBadge status={station.status} />
+    <main className="mx-auto max-w-md space-y-4 p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl">選擇救護站</h1>
+          {event && <p className="text-sm text-slate-600">{event.name}</p>}
         </div>
-        <form action={setStationStatus} className="grid grid-cols-3 gap-2">
-          {STATION_STATUS.map((s) => (
-            <button
-              key={s.value}
-              name="status"
-              value={s.value}
-              className={`btn-sm btn ${station.status === s.value ? "bg-slate-900 text-white" : "bg-white ring-1 ring-slate-300"}`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </form>
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="text-slate-600">最後回報：{formatAgo(station.lastReportAt)}</span>
-          <form action={heartbeat}>
-            <button className="btn-secondary btn-sm">✓ 回報平安（無異狀）</button>
-          </form>
-        </div>
-      </section>
-
-      <Link href="/station/patients/new" className="btn-primary w-full py-4 text-xl">
-        ＋ 登記傷患
-      </Link>
-
-      <div className="grid grid-cols-3 gap-2">
-        <StatTile label="今日人次" value={t.total} />
-        <StatTile label="留觀中" value={observing.length} tone={observing.length ? "warning" : "default"} />
-        <StatTile label="今日後送" value={t.transferred} tone={t.transferred ? "danger" : "default"} />
+        <Link href="/" className="btn-secondary btn-sm">
+          回首頁
+        </Link>
       </div>
-
-      <PatientList title={`留站觀察中（${observing.length}）`} patients={observing} empty="目前沒有留觀傷患" />
-      <PatientList title={`已離站（${others.length}）`} patients={others} empty="尚無紀錄" />
-    </>
-  );
-}
-
-function PatientList({
-  title,
-  patients,
-  empty,
-}: {
-  title: string;
-  patients: { id: string; arrivedAt: Date; triage: number; category: string; disposition: string; complaint: string; hospital: string }[];
-  empty: string;
-}) {
-  return (
-    <section className="card">
-      <h2 className="mb-2">{title}</h2>
-      {patients.length === 0 ? (
-        <p className="text-sm text-slate-500">{empty}</p>
+      {stations.length === 0 ? (
+        <p className="card text-slate-600">尚未設定救護站，請指揮中心到「系統管理」新增。</p>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {patients.map((p) => (
-            <li key={p.id}>
-              <Link href={`/station/patients/${p.id}`} className="flex items-center gap-3 py-2 hover:bg-slate-50" aria-label={`${triageLabel(p.triage)} ${categoryLabel(p.category)}`}>
-                <span className="w-12 text-sm text-slate-500 tabular-nums">{formatTime(p.arrivedAt)}</span>
-                <TriageBadge level={p.triage} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{categoryLabel(p.category)}</span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {p.disposition === "TRANSFERRED" ? `→ ${p.hospital}` : p.complaint}
-                  </span>
+        <ul className="grid gap-3">
+          {stations.map((s) => (
+            <li key={s.id}>
+              <Link href={`/station/${s.id}`} className="card flex items-center justify-between gap-3 py-5 hover:ring-2 hover:ring-red-600">
+                <span>
+                  <span className="block text-xl font-bold">{s.name}</span>
+                  {s.location && <span className="block text-sm text-slate-600">{s.location}</span>}
                 </span>
-                <DispositionBadge value={p.disposition} />
+                <StationStatusBadge status={s.status} />
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </main>
   );
 }

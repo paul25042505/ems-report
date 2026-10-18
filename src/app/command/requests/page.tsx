@@ -43,7 +43,7 @@ export default async function CommandRequestsPage({ searchParams }: { searchPara
                 <span>{requestTypeLabel(r.type)}</span>
                 {r.urgent && <span className="rounded bg-red-600 px-1.5 text-xs font-bold text-white">緊急</span>}
                 <span className="ml-auto text-xs text-slate-500">
-                  {formatDateTime(r.createdAt)}｜{r.reporterName}
+                  {formatDateTime(r.createdAt)}
                 </span>
               </div>
               <p className="whitespace-pre-wrap">{r.content}</p>

@@ -1,9 +1,10 @@
 import { listSuppliesByStation } from "@/lib/repo";
-import { requireReporter } from "@/lib/auth";
+import { getStationContext } from "@/lib/context";
 import { AddSupplyForm, SupplyRow } from "./supply-forms";
 
-export default async function SuppliesPage() {
-  const { station } = await requireReporter();
+export default async function SuppliesPage({ params }: { params: Promise<{ stationId: string }> }) {
+  const { stationId } = await params;
+  const { station } = await getStationContext(stationId);
   const supplies = await listSuppliesByStation(station.id);
 
   return (
@@ -14,13 +15,13 @@ export default async function SuppliesPage() {
         <ul className="divide-y divide-slate-100">
           {supplies.map((s) => (
             // key 帶數量：伺服器資料更新後重設輸入框
-            <SupplyRow key={`${s.id}:${s.quantity}`} supply={s} />
+            <SupplyRow key={`${s.id}:${s.quantity}`} stationId={station.id} supply={s} />
           ))}
         </ul>
       </section>
       <section className="card">
         <h2 className="mb-3">新增物資品項</h2>
-        <AddSupplyForm />
+        <AddSupplyForm stationId={station.id} />
       </section>
     </>
   );

@@ -1,7 +1,6 @@
 // Firestore 資料存取層。
 // 所有查詢只用單一欄位的等值條件（Firestore 自動建立索引），排序在程式內完成，
 // 因此不需要另外建立複合索引。單一活動的資料量（數百筆）在記憶體內處理綽綽有餘。
-import { randomBytes } from "crypto";
 import { Timestamp, type DocumentSnapshot, type Query } from "firebase-admin/firestore";
 import { firestore } from "./firestore";
 
@@ -26,21 +25,7 @@ export type Station = {
   status: string;
   contactName: string;
   contactPhone: string;
-  /** QR Code 登入用代碼，重新產生後舊的 QR Code 與已登入的裝置即失效 */
-  joinToken: string;
   lastReportAt: Date | null;
-  createdAt: Date;
-};
-
-/** 指揮中心／管理員帳號；文件 id 即為小寫帳號，確保不重複 */
-export type User = {
-  id: string;
-  username: string;
-  displayName: string;
-  passwordHash: string;
-  /** ADMIN | COMMAND */
-  role: string;
-  active: boolean;
   createdAt: Date;
 };
 
@@ -108,14 +93,11 @@ export type AuditLog = {
 const col = {
   events: firestore.collection("events"),
   stations: firestore.collection("stations"),
-  users: firestore.collection("users"),
   patients: firestore.collection("patients"),
   supplies: firestore.collection("supplies"),
   requests: firestore.collection("requests"),
   auditLogs: firestore.collection("auditLogs"),
 };
-
-export const newToken = () => randomBytes(18).toString("base64url");
 
 /** Firestore 的 Timestamp 轉回 Date */
 function fromDoc<T>(snap: DocumentSnapshot): T | null {
@@ -181,21 +163,15 @@ export async function getStation(id: string) {
   return fromDoc<Station>(await col.stations.doc(id).get());
 }
 
-export async function getStationByToken(token: string) {
-  if (!token) return null;
-  const snap = await col.stations.where("joinToken", "==", token).limit(1).get();
-  return snap.empty ? null : fromDoc<Station>(snap.docs[0]);
-}
-
 /** 建立救護站並一併建立預設物資品項 */
 export async function createStation(
-  data: Omit<NewData<Station>, "joinToken" | "lastReportAt"> & { lastReportAt?: Date | null },
+  data: Omit<NewData<Station>, "lastReportAt"> & { lastReportAt?: Date | null },
   supplies: readonly { name: string; unit: string; quantity: number; threshold: number }[],
 ) {
   const now = new Date();
   const ref = col.stations.doc();
   const batch = firestore.batch();
-  batch.set(ref, { lastReportAt: null, ...data, joinToken: newToken(), createdAt: now });
+  batch.set(ref, { lastReportAt: null, ...data, createdAt: now });
   for (const s of supplies) {
     batch.set(col.supplies.doc(), { ...s, eventId: data.eventId, stationId: ref.id, updatedAt: now });
   }
@@ -224,38 +200,6 @@ export async function deleteStation(id: string) {
   }
   batch.delete(col.stations.doc(id));
   await batch.commit();
-}
-
-// ── 帳號 ──────────────────────────────────────────────────
-
-export const userIdOf = (username: string) => username.trim().toLowerCase();
-
-export async function listUsers() {
-  return (await all<User>(col.users)).sort(byAsc((u) => u.createdAt));
-}
-
-export async function getUser(id: string) {
-  return fromDoc<User>(await col.users.doc(userIdOf(id)).get());
-}
-
-export async function hasAnyUser() {
-  return !(await col.users.limit(1).get()).empty;
-}
-
-/** 帳號已存在時回傳 false */
-export async function createUser(data: Omit<NewData<User>, "active">) {
-  const id = userIdOf(data.username);
-  try {
-    await col.users.doc(id).create({ ...data, username: id, active: true, createdAt: new Date() });
-    return true;
-  } catch (e) {
-    if ((e as { code?: number }).code === 6) return false; // ALREADY_EXISTS
-    throw e;
-  }
-}
-
-export async function updateUser(id: string, data: Partial<NewData<User>>) {
-  await col.users.doc(userIdOf(id)).update(data);
 }
 
 // ── 傷患 ──────────────────────────────────────────────────

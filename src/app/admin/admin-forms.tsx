@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { createEvent, createStation, createUser, resetPassword, updateEvent, updateStation } from "./actions";
+import { createEvent, createStation, updateEvent, updateStation } from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { STATION_STATUS } from "@/lib/constants";
 
@@ -84,54 +84,6 @@ export function StationForm({ eventId, station }: { eventId: string; station?: S
       <SubmitButton className="btn-dark" pending={pending}>
         {station ? "儲存站點" : "新增救護站"}
       </SubmitButton>
-    </ActionForm>
-  );
-}
-
-export function UserForm() {
-  const [state, action, pending] = useActionState(createUser, {});
-  const p = "user-new-";
-  return (
-    <ActionForm action={action} resetOn={state} className="space-y-3">
-      <FormMessage state={state} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="帳號" name="username" id={`${p}username`} state={state}>
-          <input id={`${p}username`} name="username" className="input" autoComplete="off" required />
-        </Field>
-        <Field label="顯示名稱" name="displayName" id={`${p}displayName`} state={state}>
-          <input id={`${p}displayName`} name="displayName" className="input" placeholder="例：指揮官 陳○○" required />
-        </Field>
-        <Field label="角色" name="role" id={`${p}role`} state={state}>
-          <select id={`${p}role`} name="role" className="input" defaultValue="COMMAND">
-            <option value="COMMAND">指揮中心</option>
-            <option value="ADMIN">系統管理員</option>
-          </select>
-        </Field>
-        <Field label="密碼" name="password" id={`${p}password`} state={state} hint="至少 8 碼">
-          <input id={`${p}password`} name="password" type="password" className="input" autoComplete="new-password" required />
-        </Field>
-      </div>
-      <SubmitButton className="btn-dark" pending={pending}>
-        建立帳號
-      </SubmitButton>
-    </ActionForm>
-  );
-}
-
-export function ResetPasswordForm({ userId }: { userId: string }) {
-  const [state, action, pending] = useActionState(resetPassword, {});
-  return (
-    <ActionForm action={action} resetOn={state} className="flex flex-wrap items-center gap-2">
-      <input type="hidden" name="id" value={userId} />
-      <input name="password" type="password" className="input w-36 py-1 text-sm" placeholder="新密碼" autoComplete="new-password" aria-label="新密碼" />
-      <SubmitButton className="btn-secondary btn-sm" pending={pending}>
-        重設
-      </SubmitButton>
-      {(state.error || state.message) && (
-        <span className={`text-xs font-semibold ${state.error ? "text-red-700" : "text-green-700"}`}>
-          {state.fieldErrors?.password ?? state.error ?? state.message}
-        </span>
-      )}
     </ActionForm>
   );
 }

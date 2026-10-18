@@ -103,7 +103,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     <td className="text-right tabular-nums">{s._count.patients}</td>
                     <td className="text-right whitespace-nowrap">
                       <Link href={`/admin/stations/${s.id}`} className="btn-secondary btn-sm">
-                        編輯／QR Code
+                        編輯
                       </Link>
                     </td>
                   </tr>
