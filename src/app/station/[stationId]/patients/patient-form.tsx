@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { savePatient } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
-import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, PATIENT_TYPES, SEXES, ageGroupLabel, ageGroupOf } from "@/lib/constants";
+import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, MILITARY_RANKS, PATIENT_TYPES, SEXES, ageGroupLabel, ageGroupOf } from "@/lib/constants";
 
 export type PatientDefaults = {
   arrivedAt: string;
   patientType?: string;
+  rank?: string;
   name?: string;
   sex?: string;
   age?: number | null;
@@ -60,9 +61,23 @@ export function PatientForm({
         </Field>
 
         {patientType && (
-          <Field label="姓名" name="name" state={state} hint="不知道可留空">
-            <input id="name" name="name" className="input" maxLength={30} defaultValue={defaults.name} autoComplete="off" />
-          </Field>
+          <div className={patientType === "MILITARY" ? "grid grid-cols-[9rem_1fr] gap-3" : ""}>
+            {patientType === "MILITARY" && (
+              <Field label="階級" name="rank" state={state}>
+                <select id="rank" name="rank" className="input" defaultValue={defaults.rank ?? ""}>
+                  <option value="">選擇</option>
+                  {MILITARY_RANKS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <Field label="姓名" name="name" state={state} hint="不知道可留空">
+              <input id="name" name="name" className="input" maxLength={30} defaultValue={defaults.name} autoComplete="off" />
+            </Field>
+          </div>
         )}
 
         <Field label="性別" name="sex" state={state}>

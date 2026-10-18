@@ -6,6 +6,7 @@ import {
   DISPOSITIONS,
   ageGroupLabel,
   categoryLabel,
+  displayName,
   patientTypeLabel,
   sexLabel,
 } from "@/lib/constants";
@@ -97,7 +98,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
               <tr key={p.id}>
                 <td className="whitespace-nowrap tabular-nums">{formatDateTime(p.arrivedAt)}</td>
                 <td className="whitespace-nowrap">{p.station.name}</td>
-                <td className="whitespace-nowrap">{p.name || "—"}</td>
+                <td className="whitespace-nowrap">{displayName(p) || "—"}</td>
                 <td className="whitespace-nowrap">{categoryLabel(p.category)}</td>
                 <td className="whitespace-nowrap">
                   {patientTypeLabel(p.patientType)}／{sexLabel(p.sex)}／{p.age != null ? `${p.age} 歲` : ageGroupLabel(p.ageGroup)}

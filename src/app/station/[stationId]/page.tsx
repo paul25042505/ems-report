@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listPatientsByStation } from "@/lib/repo";
 import { getStationContext } from "@/lib/context";
-import { STATION_STATUS, categoryLabel } from "@/lib/constants";
+import { STATION_STATUS, categoryLabel, displayName } from "@/lib/constants";
 import { totals } from "@/lib/summary";
 import { formatAgo, formatTime, startOfLocalDay } from "@/lib/time";
 import { DispositionBadge, StationStatusBadge } from "@/components/badges";
@@ -84,7 +84,7 @@ function PatientList({
 }: {
   stationId: string;
   title: string;
-  patients: { id: string; arrivedAt: Date; name?: string; age?: number | null; category: string; disposition: string; complaint: string; hospital: string }[];
+  patients: { id: string; arrivedAt: Date; patientType: string; rank?: string; name?: string; age?: number | null; category: string; disposition: string; complaint: string; hospital: string }[];
   empty: string;
 }) {
   return (
@@ -100,7 +100,7 @@ function PatientList({
                 <span className="w-12 text-sm text-slate-500 tabular-nums">{formatTime(p.arrivedAt)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">
-                    {p.name && `${p.name}・`}
+                    {displayName(p) && `${displayName(p)}・`}
                     {categoryLabel(p.category)}
                   </span>
                   <span className="block truncate text-xs text-slate-500">

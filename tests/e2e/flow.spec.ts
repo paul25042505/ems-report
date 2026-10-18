@@ -42,7 +42,7 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CS
   const body = await csv.text();
   expect(body.charCodeAt(0)).toBe(0xfeff);
   expect(body).toContain("E2E測試：意識不清");
-  expect(body).toContain("民眾,測試王小明,女,70,長者(65+)");
+  expect(body).toContain("民眾,,測試王小明,女,70,長者(65+)");
 
   // 改為後送 → 指揮中心出現後送告警
   await reporter.getByText("E2E測試：意識不清").click();
@@ -56,6 +56,27 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CS
 
   await command.goto("/command");
   await expect(command.getByText(/分站A：後送 E2E醫院/)).toBeVisible();
+});
+
+test("國軍官兵在姓名左邊選擇階級", async ({ browser }) => {
+  const reporter = await browser.newPage();
+  await enterStation(reporter, "主站");
+  await reporter.getByRole("link", { name: "＋ 登記傷患" }).click();
+  await choose(reporter, "patientType", "民眾");
+  await expect(reporter.getByLabel("階級")).toHaveCount(0);
+  await choose(reporter, "patientType", "國軍官兵");
+  await reporter.getByLabel("階級").selectOption("上士");
+  await reporter.getByLabel("姓名").fill("測試陳大華");
+  await choose(reporter, "sex", "男");
+  await choose(reporter, "ageGroup", "成人(18-64)");
+  await choose(reporter, "category", "扭傷");
+  await reporter.getByRole("button", { name: "送出登記" }).click();
+  await expect(reporter.getByText("上士 測試陳大華・扭傷")).toBeVisible();
+
+  const command = await browser.newPage();
+  await enterCommand(command);
+  await command.goto("/command/patients");
+  await expect(command.getByRole("cell", { name: "上士 測試陳大華" })).toBeVisible();
 });
 
 test("表單缺漏欄位時顯示錯誤，保留已填內容", async ({ page }) => {

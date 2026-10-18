@@ -7,6 +7,7 @@ import {
   REQUEST_STATUS,
   REQUEST_TYPES,
   SEXES,
+  MILITARY_RANKS,
   STATION_STATUS,
   ageGroupOf,
 } from "./constants";
@@ -56,6 +57,7 @@ export const patientSchema = z
   .object({
     arrivedAt: localDateTime,
     patientType: pick(PATIENT_TYPES),
+    rank: z.preprocess((v) => (v === "" ? undefined : v), z.enum(MILITARY_RANKS, { error: "請選擇階級" }).optional()),
     name: text(30),
     sex: pick(SEXES),
     age: z.preprocess(
@@ -87,8 +89,10 @@ export const patientSchema = z
       ctx.addIssue({ code: "custom", path: ["departedAt"], message: "離站時間不可早於到站時間" });
     }
   })
-  .transform(({ age, ageGroup, ...rest }) => ({
+  .transform(({ age, ageGroup, rank, ...rest }) => ({
     ...rest,
+    // 只有國軍官兵記錄階級
+    rank: rest.patientType === "MILITARY" ? (rank ?? "") : "",
     age: age ?? null,
     ageGroup: age !== undefined ? ageGroupOf(age) : ageGroup!,
   }));

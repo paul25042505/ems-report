@@ -58,6 +58,7 @@ async function seedDemo() {
       stationId: stations[c.s].id,
       arrivedAt: minsAgo(c.m),
       patientType: c.type,
+      rank: "",
       name: "",
       sex: c.sex,
       age: null,

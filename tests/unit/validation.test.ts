@@ -75,6 +75,17 @@ describe("傷患表單驗證", () => {
     expect(!bad.success && bad.state.fieldErrors?.age).toBeTruthy();
   });
 
+  it("國軍官兵記錄階級，其他身分不記錄；階級須為選項內的值", () => {
+    const mil = parseForm(patientSchema, fd({ ...basePatient, patientType: "MILITARY", rank: "上士", name: "王小明" }));
+    expect(mil.success && mil.data.rank).toBe("上士");
+    const pub = parseForm(patientSchema, fd({ ...basePatient, patientType: "PUBLIC", rank: "上士" }));
+    expect(pub.success && pub.data.rank).toBe("");
+    const none = parseForm(patientSchema, fd({ ...basePatient, patientType: "MILITARY", rank: "" }));
+    expect(none.success && none.data.rank).toBe("");
+    const bad = parseForm(patientSchema, fd({ ...basePatient, patientType: "MILITARY", rank: "元帥" }));
+    expect(!bad.success && bad.state.fieldErrors?.rank).toBe("請選擇階級");
+  });
+
   it("後送必須填醫院", () => {
     const r = parseForm(patientSchema, fd({ ...basePatient, disposition: "TRANSFERRED" }));
     expect(r.success).toBe(false);

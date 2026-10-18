@@ -26,6 +26,22 @@ export const PATIENT_TYPES = [
 ] as const satisfies readonly Option<string>[];
 export const patientTypeLabel = (v: string) => labelOf(PATIENT_TYPES, v);
 
+/** 國軍階級（身分為國軍官兵時填寫） */
+export const MILITARY_RANKS = [
+  "二兵", "一兵", "上兵",
+  "下士", "中士", "上士",
+  "三等士官長", "二等士官長", "一等士官長",
+  "少尉", "中尉", "上尉",
+  "少校", "中校", "上校",
+  "少將", "中將", "上將",
+] as const;
+
+/** 顯示用姓名：國軍官兵在姓名前加上階級 */
+export function displayName(p: { patientType: string; rank?: string; name?: string }) {
+  const name = p.name ?? "";
+  return p.patientType === "MILITARY" && p.rank ? `${p.rank} ${name}`.trim() : name;
+}
+
 export const SEXES = [
   { value: "M", label: "男" },
   { value: "F", label: "女" },

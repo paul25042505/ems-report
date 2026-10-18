@@ -20,11 +20,12 @@ export async function GET(req: NextRequest) {
 
   const patients = await findPatients(event.id, filter);
   const rows: unknown[][] = [
-    ["到站時間", "站點", "身分", "姓名", "性別", "年齡", "年齡層", "傷病類別", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
+    ["到站時間", "站點", "身分", "階級", "姓名", "性別", "年齡", "年齡層", "傷病類別", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
     ...patients.map((p) => [
       formatDateTime(p.arrivedAt),
       p.station.name,
       patientTypeLabel(p.patientType),
+      p.rank ?? "",
       p.name ?? "",
       sexLabel(p.sex),
       p.age ?? "",

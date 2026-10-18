@@ -36,6 +36,8 @@ export type Patient = {
   stationId: string;
   arrivedAt: Date;
   patientType: string;
+  /** 階級（國軍官兵才有） */
+  rank: string;
   /** 姓名（選填） */
   name: string;
   sex: string;
