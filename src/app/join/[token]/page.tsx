@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { getEvent, getStationByToken } from "@/lib/repo";
 import { JoinForm } from "./join-form";
 
 export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const station = await db.station.findUnique({ where: { joinToken: token }, include: { event: true } });
+  const station = await getStationByToken(token);
+  const event = station && (await getEvent(station.eventId));
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
@@ -14,9 +15,9 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           <h1 className="text-2xl">救護站登入</h1>
         </div>
         <div className="card">
-          {station ? (
+          {station && event ? (
             <>
-              <p className="text-sm text-slate-600">{station.event.name}</p>
+              <p className="text-sm text-slate-600">{event.name}</p>
               <h2 className="mb-4 text-2xl">{station.name}</h2>
               <JoinForm token={token} />
             </>

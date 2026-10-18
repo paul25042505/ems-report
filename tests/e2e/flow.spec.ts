@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { choose, db, joinAs, loginAs, stationToken } from "./helpers";
-
-test.afterAll(async () => {
-  await db.$disconnect();
-});
+import { choose, joinAs, loginAs, stationToken } from "./helpers";
 
 test("站點登記重症傷患 → 指揮中心看到告警並匯出 CSV", async ({ browser }) => {
   const reporter = await browser.newPage();

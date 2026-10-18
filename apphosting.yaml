@@ -1,0 +1,17 @@
+# Firebase App Hosting 設定
+# 部署前請先建立兩個 Secret（見 README「部署到 Firebase」）：ems-session-secret、ems-admin-password
+runConfig:
+  minInstances: 0
+  # 登入失敗次數限制記在記憶體中，單一實例即可應付活動流量
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: SESSION_SECRET
+    secret: ems-session-secret
+  - variable: ADMIN_USERNAME
+    value: admin
+  - variable: ADMIN_PASSWORD
+    secret: ems-admin-password

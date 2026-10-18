@@ -1,10 +1,10 @@
-import { db } from "@/lib/db";
+import { listSuppliesByStation } from "@/lib/repo";
 import { requireReporter } from "@/lib/auth";
 import { AddSupplyForm, SupplyRow } from "./supply-forms";
 
 export default async function SuppliesPage() {
   const { station } = await requireReporter();
-  const supplies = await db.supply.findMany({ where: { stationId: station.id }, orderBy: { name: "asc" } });
+  const supplies = await listSuppliesByStation(station.id);
 
   return (
     <>

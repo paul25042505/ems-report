@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { listPatientsByStation } from "@/lib/repo";
 import { requireReporter } from "@/lib/auth";
 import { STATION_STATUS, categoryLabel, triageLabel } from "@/lib/constants";
 import { totals } from "@/lib/summary";
@@ -11,7 +11,7 @@ import { heartbeat, setStationStatus } from "./actions";
 export default async function StationHome({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { saved } = await searchParams;
   const { station } = await requireReporter();
-  const patients = await db.patient.findMany({ where: { stationId: station.id }, orderBy: { arrivedAt: "desc" } });
+  const patients = await listPatientsByStation(station.id);
   const today = startOfLocalDay(new Date());
   const todays = patients.filter((p) => p.arrivedAt >= today);
   const t = totals(todays);

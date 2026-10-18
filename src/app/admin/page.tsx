@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { countPatients, countStations, listEvents, listStations } from "@/lib/repo";
 import { toLocalDateInput } from "@/lib/time";
 import { StationStatusBadge } from "@/components/badges";
 import { activateEvent } from "./actions";
@@ -9,14 +9,14 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
   const { event: eventId } = await searchParams;
-  const events = await db.event.findMany({ orderBy: { startDate: "desc" }, include: { _count: { select: { stations: true } } } });
+  const events = await Promise.all(
+    (await listEvents()).map(async (e) => ({ ...e, _count: { stations: await countStations(e.id) } })),
+  );
   const selected = events.find((e) => e.id === eventId) ?? events.find((e) => e.isActive) ?? events[0];
   const stations = selected
-    ? await db.station.findMany({
-        where: { eventId: selected.id },
-        orderBy: { createdAt: "asc" },
-        include: { _count: { select: { patients: true } } },
-      })
+    ? await Promise.all(
+        (await listStations(selected.id)).map(async (s) => ({ ...s, _count: { patients: await countPatients(s.id) } })),
+      )
     : [];
 
   return (

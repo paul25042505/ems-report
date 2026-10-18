@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
+import { getPatient } from "@/lib/repo";
 import { requireReporter } from "@/lib/auth";
 import { formatDateTime, toLocalInput } from "@/lib/time";
 import { PatientForm } from "../patient-form";
@@ -7,7 +7,7 @@ import { PatientForm } from "../patient-form";
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { station } = await requireReporter();
-  const p = await db.patient.findUnique({ where: { id } });
+  const p = await getPatient(id);
   if (!p || p.stationId !== station.id) notFound();
 
   return (

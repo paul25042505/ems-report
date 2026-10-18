@@ -1,11 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import { expect, type Page } from "@playwright/test";
-
-export const db = new PrismaClient();
+import { firestore } from "../../src/lib/firestore";
 
 export async function stationToken(name: string) {
-  const s = await db.station.findFirstOrThrow({ where: { name } });
-  return s.joinToken;
+  const snap = await firestore.collection("stations").where("name", "==", name).limit(1).get();
+  if (snap.empty) throw new Error(`找不到站點 ${name}`);
+  return snap.docs[0].get("joinToken") as string;
 }
 
 export async function joinAs(page: Page, stationName: string, reporter: string) {

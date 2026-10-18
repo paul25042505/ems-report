@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { listStations } from "@/lib/repo";
 import { resolveEvent } from "@/lib/dashboard";
 import { findPatients, type PatientFilter } from "@/lib/patient-query";
 import {
@@ -24,7 +24,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
 
   const [patients, stations] = await Promise.all([
     findPatients(event.id, filter),
-    db.station.findMany({ where: { eventId: event.id }, orderBy: { createdAt: "asc" } }),
+    listStations(event.id),
   ]);
   const query = new URLSearchParams(Object.entries({ ...filter, event: event.id }).filter(([, v]) => v) as [string, string][]);
 

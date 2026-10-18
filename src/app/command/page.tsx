@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { db } from "@/lib/db";
+import { listEvents } from "@/lib/repo";
 import { getEventDashboard, resolveEvent } from "@/lib/dashboard";
 import { CATEGORIES, TRIAGE_LEVELS, categoryLabel, patientTypeLabel, triageLabel, PATIENT_TYPES } from "@/lib/constants";
 import { formatAgo } from "@/lib/time";
@@ -20,7 +20,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
 
   const [d, events] = await Promise.all([
     getEventDashboard(event.id),
-    db.event.findMany({ orderBy: { startDate: "desc" }, select: { id: true, name: true } }),
+    listEvents(),
   ]);
   const alertStations = new Set(d.alerts.filter((a) => a.level === "danger").map((a) => a.stationId));
   const triageColor = (k: string) => k === "5" ? "bg-slate-400" : TRIAGE_LEVELS.find((t) => String(t.value) === k)?.color.split(" ")[0] ?? "bg-slate-600";
@@ -34,7 +34,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Suspense>
-            <EventPicker events={events} current={event.id} />
+            <EventPicker events={events.map((e) => ({ id: e.id, name: e.name }))} current={event.id} />
           </Suspense>
           <AutoRefresh seconds={10} />
         </div>

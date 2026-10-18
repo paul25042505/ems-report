@@ -3,7 +3,8 @@
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
+import { getStationByToken, getUser } from "@/lib/repo";
+import { ensureInitialAdmin } from "@/lib/bootstrap";
 import { audit } from "@/lib/audit";
 import { createSession, destroySession } from "@/lib/auth";
 import { homePathFor } from "@/lib/access";
@@ -20,7 +21,8 @@ export async function login(_prev: ActionState, formData: FormData): Promise<Act
   const key = `${ip}:${username.toLowerCase()}`;
   if (isLimited(key)) return { error: "登入失敗次數過多，請 10 分鐘後再試" };
 
-  const user = await db.user.findUnique({ where: { username } });
+  await ensureInitialAdmin();
+  const user = await getUser(username);
   const ok = user && user.active && (await bcrypt.compare(password, user.passwordHash));
   if (!ok) {
     recordFailure(key);
@@ -38,7 +40,7 @@ export async function joinStation(token: string, _prev: ActionState, formData: F
   const parsed = parseForm(joinSchema, formData);
   if (!parsed.success) return parsed.state;
 
-  const station = await db.station.findUnique({ where: { joinToken: token } });
+  const station = await getStationByToken(token);
   if (!station) return { error: "此 QR Code 已失效，請向指揮中心索取新的 QR Code" };
 
   const name = parsed.data.reporterName;

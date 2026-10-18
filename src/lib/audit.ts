@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "./db";
+import { addAuditLog } from "./repo";
 import type { SessionPayload } from "./session";
 
 export async function audit(
@@ -9,14 +9,12 @@ export async function audit(
   entityId = "",
   detail?: unknown,
 ) {
-  await db.auditLog.create({
-    data: {
-      actor: session.name,
-      role: session.role,
-      action,
-      entity,
-      entityId,
-      detail: detail === undefined ? "" : JSON.stringify(detail),
-    },
+  await addAuditLog({
+    actor: session.name,
+    role: session.role,
+    action,
+    entity,
+    entityId,
+    detail: detail === undefined ? "" : JSON.stringify(detail),
   });
 }

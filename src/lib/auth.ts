@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "./db";
+import { getEvent, getStation, getUser } from "./repo";
 import type { Role } from "./constants";
 import { SESSION_COOKIE, SESSION_HOURS, signSession, verifySession, type SessionPayload } from "./session";
 
@@ -33,15 +33,12 @@ export async function getSession(): Promise<SessionPayload | null> {
 
   if (session.role === "REPORTER") {
     if (!session.stationId || !session.joinToken) return null;
-    const station = await db.station.findUnique({
-      where: { id: session.stationId },
-      select: { joinToken: true },
-    });
+    const station = await getStation(session.stationId);
     return station?.joinToken === session.joinToken ? session : null;
   }
 
   if (!session.uid) return null;
-  const user = await db.user.findUnique({ where: { id: session.uid } });
+  const user = await getUser(session.uid);
   if (!user || !user.active || user.role !== session.role) return null;
   return { ...session, name: user.displayName };
 }
@@ -54,9 +51,8 @@ export async function requireRole(...roles: Role[]) {
 
 export async function requireReporter() {
   const session = await requireRole("REPORTER");
-  const station = await db.station.findUniqueOrThrow({
-    where: { id: session.stationId! },
-    include: { event: true },
-  });
-  return { session, station };
+  const station = await getStation(session.stationId!);
+  const event = station && (await getEvent(station.eventId));
+  if (!station || !event) redirect("/login");
+  return { session, station: { ...station, event } };
 }

@@ -1,6 +1,5 @@
 import "server-only";
-import type { Prisma } from "@prisma/client";
-import { db } from "./db";
+import { listPatientsByEvent, listStations } from "./repo";
 
 export type PatientFilter = {
   event?: string;
@@ -10,21 +9,18 @@ export type PatientFilter = {
   category?: string;
 };
 
-export function patientWhere(eventId: string, f: PatientFilter): Prisma.PatientWhereInput {
+/** 取得場次的傷患紀錄（依篩選條件，新到舊），並附上站名 */
+export async function findPatients(eventId: string, f: PatientFilter) {
   const triage = Number(f.triage);
-  return {
-    station: { eventId },
-    ...(f.station ? { stationId: f.station } : {}),
-    ...(triage >= 1 && triage <= 5 ? { triage } : {}),
-    ...(f.disposition ? { disposition: f.disposition } : {}),
-    ...(f.category ? { category: f.category } : {}),
-  };
-}
-
-export function findPatients(eventId: string, f: PatientFilter) {
-  return db.patient.findMany({
-    where: patientWhere(eventId, f),
-    include: { station: { select: { name: true } } },
-    orderBy: { arrivedAt: "desc" },
-  });
+  const [patients, stations] = await Promise.all([listPatientsByEvent(eventId), listStations(eventId)]);
+  const names = new Map(stations.map((s) => [s.id, s.name]));
+  return patients
+    .filter(
+      (p) =>
+        (!f.station || p.stationId === f.station) &&
+        (!(triage >= 1 && triage <= 5) || p.triage === triage) &&
+        (!f.disposition || p.disposition === f.disposition) &&
+        (!f.category || p.category === f.category),
+    )
+    .map((p) => ({ ...p, station: { name: names.get(p.stationId) ?? "" } }));
 }

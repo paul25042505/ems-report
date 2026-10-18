@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { listUsers, userIdOf } from "@/lib/repo";
 import { requireRole } from "@/lib/auth";
 import { ROLE_LABELS, type Role } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
   const session = await requireRole("ADMIN");
-  const users = await db.user.findMany({ orderBy: { createdAt: "asc" } });
+  const users = await listUsers();
 
   return (
     <>
@@ -40,7 +40,7 @@ export default async function UsersPage() {
                   <ResetPasswordForm userId={u.id} />
                 </td>
                 <td>
-                  {u.id !== session.uid && (
+                  {u.id !== userIdOf(session.uid ?? "") && (
                     <form action={toggleUser.bind(null, u.id)}>
                       <button className="btn-secondary btn-sm">{u.active ? "停用" : "啟用"}</button>
                     </form>

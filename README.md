@@ -40,39 +40,85 @@
 
 ## 技術架構
 
-Next.js 15（App Router、Server Actions）＋ TypeScript ＋ Prisma ＋ SQLite ＋ Tailwind CSS 4，前後端在同一個專案。測試使用 Vitest（單元）與 Playwright（端對端）。
+Next.js 15（App Router、Server Actions）＋ TypeScript ＋ **Cloud Firestore**（firebase-admin）＋ Tailwind CSS 4，部署在 **Firebase App Hosting**。測試使用 Vitest（單元）與 Playwright（端對端，搭配 Firestore 模擬器）。
 
-SQLite 對單一活動的資料量綽綽有餘，部署只要保留一個資料檔；之後若要改用 PostgreSQL，修改 `prisma/schema.prisma` 的 `provider` 並重新產生 migration 即可。
+- 所有資料都由網站伺服器透過 Admin SDK 讀寫，瀏覽器不直接連 Firestore；`firestore.rules` 禁止所有用戶端存取
+- 查詢只用單一欄位條件，不需要建立任何 Firestore 複合索引
+
+Firestore 集合：`events`（場次）、`stations`（救護站）、`users`（帳號）、`patients`（傷患）、`supplies`（物資）、`requests`（支援申請）、`auditLogs`（操作紀錄）。
 
 ```
-prisma/            資料模型、migration、seed（初始管理員與示範資料）
 src/app/station/   站點人員頁面（手機版）
 src/app/command/   指揮中心：看板、傷患紀錄、支援申請、成果報告
 src/app/admin/     系統管理：場次、救護站、QR Code、帳號、操作紀錄
 src/app/join/      QR Code 登入
+src/lib/repo.ts    Firestore 資料存取
 src/lib/           權限、session、驗證、統計與告警邏輯、選項定義
+scripts/seed.ts    建立示範資料
 tests/unit/        單元測試
 tests/e2e/         端對端測試
+apphosting.yaml    App Hosting 設定
 ```
 
 > 要調整表單的選項（例如對齊既有的 Google 表單），修改 `src/lib/constants.ts` 即可。
 
+## 部署到 Firebase（App Hosting + Firestore）
+
+前置條件：Firebase 專案已建立 **Cloud Firestore**（預設資料庫 `(default)`），並升級為 **Blaze 方案**（App Hosting 需要；活動規模的用量通常在免費額度內）。
+
+**1. 在 Firebase 主控台建立 App Hosting 後端**
+
+「建構 → App Hosting → 開始使用」，連結 GitHub 儲存庫 `paul25042505/ems-report`，根目錄 `/`、正式版分支 `main`，後端名稱填 `ems-report`，區域選 `asia-east1`（台灣）。第一次部署會因為還沒設定 Secret 而失敗，沒關係。
+
+**2. 設定兩個 Secret**（在本機專案資料夾執行）
+
+```bash
+npm install
+npx firebase login
+npx firebase use <你的專案ID>
+npx firebase apphosting:secrets:set ems-session-secret    # 貼上 openssl rand -base64 32 產生的亂數
+npx firebase apphosting:secrets:set ems-admin-password    # 初始管理員密碼（至少 8 碼）
+```
+
+詢問是否授權給後端時選 `ems-report`；若沒問到，執行：
+
+```bash
+npx firebase apphosting:secrets:grantaccess ems-session-secret,ems-admin-password --backend ems-report
+```
+
+**3. 重新部署**
+
+主控台 App Hosting → `ems-report` →「建立推出作業（rollout）」，或推送任何 commit 到 `main` 會自動部署。
+
+**4. 開始使用**
+
+打開後端網址（`https://ems-report--<專案ID>.<區域>.hosted.app`），以 `admin` 和步驟 2 的密碼登入（第一次登入會自動建立管理員），到「系統管理」建立場次與救護站、列印 QR Code。
+
+**（選用）部署安全規則**：`npx firebase deploy --only firestore:rules`。以「正式版模式」建立的 Firestore 預設已禁止用戶端存取。
+
+> 若網站出現 Firestore 權限錯誤，到 Google Cloud 主控台 IAM，給 App Hosting 的服務帳號（`firebase-app-hosting-compute@<專案ID>.iam.gserviceaccount.com`）加上「Cloud Datastore 使用者」角色。
+> 使用非預設的 Firestore 資料庫時，在 `apphosting.yaml` 加上環境變數 `FIRESTORE_DATABASE_ID`。
+
+### 備份
+
+在指揮中心「傷患紀錄」匯出 CSV；或用 Firestore 的匯出／排程備份功能。
+
 ## 本機開發
 
-需要 Node.js 22。
+需要 Node.js 22 與 Java 11 以上（Firestore 模擬器）。
 
 ```bash
 npm install
 cp .env.example .env            # 編輯 ADMIN_PASSWORD
-npx prisma migrate deploy       # 建立資料庫
-npm run db:seed:demo            # 建立管理員與示範資料（含 3 個救護站）
-npm run dev                     # http://localhost:3000
+npm run dev                     # 啟動 Firestore 模擬器、寫入示範資料，http://localhost:3000
 ```
+
+本機資料存在模擬器的記憶體中，停止後即清除，不會動到正式的 Firestore。
 
 示範帳號：
 - 管理員：`admin` ／ `.env` 中的 `ADMIN_PASSWORD`
 - 指揮中心：`command` ／ `command1234`
-- 站點人員：seed 會印出各站的 `/join/...` 網址，也可以在「系統管理 → 救護站 → 編輯／QR Code」取得
+- 站點人員：啟動時會印出各站的 `/join/...` 網址，也可以在「系統管理 → 救護站 → 編輯／QR Code」取得
 
 ## 測試
 
@@ -80,49 +126,17 @@ npm run dev                     # http://localhost:3000
 npm run lint
 npm run typecheck
 npm test                        # 單元測試
-npm run test:e2e                # 端對端測試（自動建立獨立的 prisma/e2e.db、build 並啟動服務）
+npm run test:e2e                # 端對端測試（自動啟動 Firestore 模擬器、build 並啟動服務）
 ```
-
-## 部署
-
-### Docker（自有主機或任何支援 Docker 的平台）
-
-```bash
-cat > .env <<'EOF'
-SESSION_SECRET=請用 openssl rand -base64 32 產生
-ADMIN_PASSWORD=初始管理員密碼
-PUBLIC_URL=https://你的網域
-EOF
-docker compose up -d --build
-```
-
-- 資料存在 Docker volume `ems-data`（`/data/ems.db`），重建容器不會遺失
-- 容器啟動時自動套用資料庫遷移，若沒有任何帳號會建立初始管理員
-- 前面請放 HTTPS 反向代理（Caddy、Nginx 或平台內建）。Session Cookie 在正式環境設為 Secure，純 HTTP 連線無法登入；若只在內網用 HTTP 測試，可設 `INSECURE_COOKIE=1`
-- `PUBLIC_URL` 是 QR Code 內的網址，沒設定時以瀏覽器存取的網址產生
-
-### Render 一鍵部署
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/paul25042505/ems-report)
-
-依 `render.yaml` 建立服務與 1GB 永久磁碟（Starter 方案），過程中只需填 `ADMIN_PASSWORD`；`SESSION_SECRET` 會自動產生。
-
-### 其他雲端平台（如 Zeabur、Fly.io）
-
-用 Dockerfile 部署，設定上面三個環境變數，並掛載一個持久化磁碟到 `/data`。
-
-### 備份
-
-資料就是 `/data/ems.db` 一個檔案，活動結束後複製保存即可；也可以在指揮中心匯出 CSV。
 
 ## 環境變數
 
 | 變數 | 說明 |
 |---|---|
-| `DATABASE_URL` | SQLite 路徑，Docker 預設 `file:/data/ems.db` |
-| `SESSION_SECRET` | Session 簽章金鑰，正式環境必填、至少 32 字元 |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 資料庫沒有任何帳號時建立的初始管理員 |
-| `PUBLIC_URL` | 選填，QR Code 使用的對外網址 |
+| `SESSION_SECRET` | Session 簽章金鑰，正式環境必填、至少 32 字元（App Hosting 用 Secret `ems-session-secret`） |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 資料庫沒有任何帳號時，第一次登入建立的初始管理員（密碼用 Secret `ems-admin-password`） |
+| `FIRESTORE_DATABASE_ID` | 選填，非預設的 Firestore 資料庫 ID |
+| `PUBLIC_URL` | 選填，QR Code 使用的對外網址；預設以瀏覽器存取的網址產生 |
 | `INSECURE_COOKIE` | 選填，設為 `1` 允許在 HTTP 下登入（僅限測試） |
 
 ## 後續可擴充

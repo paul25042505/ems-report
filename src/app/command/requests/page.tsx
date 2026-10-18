@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { listRequestsByEvent, listStations } from "@/lib/repo";
 import { resolveEvent } from "@/lib/dashboard";
 import { requestTypeLabel } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
@@ -16,13 +16,11 @@ export default async function CommandRequestsPage({ searchParams }: { searchPara
   const event = await resolveEvent(eventId);
   if (!event) return <NoEvent />;
 
-  const requests = (
-    await db.supportRequest.findMany({
-      where: { station: { eventId: event.id } },
-      include: { station: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-    })
-  ).sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || Number(b.urgent) - Number(a.urgent));
+  const [all, stations] = await Promise.all([listRequestsByEvent(event.id), listStations(event.id)]);
+  const names = new Map(stations.map((s) => [s.id, s.name]));
+  const requests = all
+    .map((r) => ({ ...r, station: { name: names.get(r.stationId) ?? "" } }))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || Number(b.urgent) - Number(a.urgent));
 
   return (
     <>

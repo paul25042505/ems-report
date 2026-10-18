@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { db } from "@/lib/db";
+import { countPatients, getEvent, getStation } from "@/lib/repo";
 import { PrintButton } from "@/app/command/summary/print-button";
 import { deleteStation, regenerateToken } from "../../actions";
 import { StationForm } from "../../admin-forms";
@@ -19,11 +19,10 @@ async function baseUrl() {
 
 export default async function StationAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const station = await db.station.findUnique({
-    where: { id },
-    include: { event: true, _count: { select: { patients: true } } },
-  });
-  if (!station) notFound();
+  const found = await getStation(id);
+  const event = found && (await getEvent(found.eventId));
+  if (!found || !event) notFound();
+  const station = { ...found, event, _count: { patients: await countPatients(found.id) } };
 
   const joinUrl = `${await baseUrl()}/join/${station.joinToken}`;
   const qr = await QRCode.toDataURL(joinUrl, { width: 480, margin: 1, errorCorrectionLevel: "M" });

@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { listRequestsByStation } from "@/lib/repo";
 import { requireReporter } from "@/lib/auth";
 import { requestTypeLabel } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
@@ -8,7 +8,7 @@ import { RequestForm } from "./request-form";
 
 export default async function StationRequestsPage() {
   const { station } = await requireReporter();
-  const requests = await db.supportRequest.findMany({ where: { stationId: station.id }, orderBy: { createdAt: "desc" } });
+  const requests = await listRequestsByStation(station.id);
 
   return (
     <>

@@ -1,8 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
-// e2e 使用獨立的資料庫，每次執行前重建並寫入示範資料
-process.env.DATABASE_URL = "file:./e2e.db";
+// e2e 使用 Firestore 模擬器（資料只在記憶體，每次執行都是全新的），並寫入示範資料。
+// 測試程式本身也透過 Admin SDK 連到同一個模擬器查資料。
+const EMULATOR = { FIRESTORE_EMULATOR_HOST: "127.0.0.1:8085", GCLOUD_PROJECT: "demo-ems" };
+Object.assign(process.env, EMULATOR);
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -17,12 +19,12 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `node -e "require('fs').rmSync('prisma/e2e.db',{force:true})" && npx prisma migrate deploy && npx tsx prisma/seed.ts --demo && npx next build && npx next start -p ${PORT}`,
+    command: `npx firebase emulators:exec --only firestore --project demo-ems "npx tsx scripts/seed.ts --demo && npx next build && npx next start -p ${PORT}"`,
     url: `http://localhost:${PORT}/login`,
     timeout: 300_000,
     reuseExistingServer: false,
     env: {
-      DATABASE_URL: "file:./e2e.db",
+      ...EMULATOR,
       SESSION_SECRET: "e2e-test-secret-0123456789-abcdefghijklmnopqrstuvwxyz",
       ADMIN_USERNAME: "admin",
       ADMIN_PASSWORD: "admin1234",

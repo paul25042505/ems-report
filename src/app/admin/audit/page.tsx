@@ -1,11 +1,11 @@
-import { db } from "@/lib/db";
+import { listAuditLogs } from "@/lib/repo";
 import { ROLE_LABELS, type Role } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
 export default async function AuditPage() {
-  const logs = await db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 300 });
+  const logs = await listAuditLogs(300);
   return (
     <section className="card overflow-x-auto">
       <h1 className="mb-2">操作紀錄</h1>
