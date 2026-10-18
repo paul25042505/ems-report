@@ -3,8 +3,29 @@
     "rules": "firestore.rules"
   },
   "emulators": {
-    "firestore": { "host": "127.0.0.1", "port": 8085 },
-    "ui": { "enabled": false },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8085
+    },
+    "ui": {
+      "enabled": false
+    },
     "singleProjectMode": true
-  }
+  },
+  "apphosting": [
+    {
+      "backendId": "ems-report",
+      "rootDir": "/",
+      "ignore": [
+        "node_modules",
+        ".git",
+        ".next",
+        ".env",
+        "test-results",
+        "playwright-report",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ]
 }

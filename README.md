@@ -6,6 +6,8 @@
 |---|---|
 | <img src="docs/screenshots/02-station-home.png" width="260"> | <img src="docs/screenshots/05-dashboard.png" width="520"> |
 
+**正式網址：** https://ems-report--ems-report-29cc5.asia-east1.hosted.app
+
 ## 功能
 
 **站點人員**（掃描站點 QR Code 登入，不需帳號）
@@ -85,6 +87,8 @@ npx firebase apphosting:secrets:set ems-admin-password    # 初始管理員密�
 ```bash
 npx firebase apphosting:secrets:grantaccess ems-session-secret,ems-admin-password --backend ems-report
 ```
+
+> 也可以不連 GitHub，直接從本機部署：`npx firebase deploy --only apphosting,firestore:rules`（`firebase.json` 已設定後端 `ems-report`）。
 
 **3. 重新部署**
 
