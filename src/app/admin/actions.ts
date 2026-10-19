@@ -10,6 +10,7 @@ import { DEFAULT_SUPPLIES, memberRoleLabel } from "@/lib/constants";
 import {
   allowedUserSchema,
   eventSchema,
+  memberRolesSchema,
   parseForm,
   stationSchema,
   type ActionState,
@@ -70,11 +71,11 @@ export async function deleteStation(stationId: string) {
 export async function addAllowedUser(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = parseForm(allowedUserSchema, formData);
   if (!parsed.success) return parsed.state;
-  await repo.addAllowedUser(parsed.data.email, parsed.data.note, parsed.data.role);
+  await repo.addAllowedUser(parsed.data.email, parsed.data.note, parsed.data.roles);
   forgetAllowed(parsed.data.email);
   await audit(await commandActor(), "加入登入名單", "AllowedUser", parsed.data.email, parsed.data);
   revalidatePath("/admin/users");
-  return { ok: true, message: `已加入 ${parsed.data.email}（${memberRoleLabel(parsed.data.role)}）` };
+  return { ok: true, message: `已加入 ${parsed.data.email}（${parsed.data.roles.map(memberRoleLabel).join("、")}）` };
 }
 
 export async function removeAllowedUser(email: string) {
@@ -86,11 +87,16 @@ export async function removeAllowedUser(email: string) {
   revalidatePath("/admin/users");
 }
 
-export async function setMemberRole(email: string, role: "COMMAND" | "STATION") {
-  // 不能改自己的角色，避免把自己鎖在系統管理外面；擁有者固定為指揮中心
-  if (ownerEmails().includes(repo.emailId(email)) || repo.emailId(email) === (await currentUser()).email) return;
-  await repo.setAllowedUserRole(email, role);
+export async function setMemberRoles(email: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  // 不能改擁有者與自己的角色，避免把自己鎖在系統管理外面
+  if (ownerEmails().includes(repo.emailId(email)) || repo.emailId(email) === (await currentUser()).email) {
+    return { error: "不能變更自己或擁有者的角色" };
+  }
+  const parsed = parseForm(memberRolesSchema, formData);
+  if (!parsed.success) return { error: parsed.state.fieldErrors?.roles ?? "請至少勾選一個角色" };
+  await repo.setAllowedUserRoles(email, parsed.data);
   forgetAllowed(email);
-  await audit(await commandActor(), "變更成員角色", "AllowedUser", email, { role });
+  await audit(await commandActor(), "變更成員角色", "AllowedUser", email, { roles: parsed.data });
   revalidatePath("/admin/users");
+  return { ok: true, message: "已儲存" };
 }

@@ -7,7 +7,6 @@ import {
   REQUEST_STATUS,
   REQUEST_TYPES,
   SEXES,
-  MEMBER_ROLES,
   MILITARY_RANKS,
   STATION_STATUS,
   ageGroupOf,
@@ -147,9 +146,21 @@ export const stationSchema = z.object({
 
 export const allowedUserSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email({ error: "請輸入正確的 Email" })),
-  role: pick(MEMBER_ROLES, "請選擇角色"),
+  roleCommand: checkbox,
+  roleStation: checkbox,
   note: text(50),
-});
+})
+  .refine((v) => v.roleCommand || v.roleStation, { path: ["roles"], message: "請至少勾選一個角色" })
+  .transform(({ roleCommand, roleStation, ...rest }) => ({ ...rest, roles: rolesFrom(roleCommand, roleStation) }));
+
+export const memberRolesSchema = z
+  .object({ roleCommand: checkbox, roleStation: checkbox })
+  .refine((v) => v.roleCommand || v.roleStation, { path: ["roles"], message: "請至少勾選一個角色" })
+  .transform((v) => rolesFrom(v.roleCommand, v.roleStation));
+
+function rolesFrom(command: boolean, station: boolean) {
+  return [...(command ? ["COMMAND"] : []), ...(station ? ["STATION"] : [])];
+}
 
 export type ActionState = {
   ok?: boolean;

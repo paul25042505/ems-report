@@ -298,8 +298,22 @@ export async function listAuditLogs(limit: number) {
 // ── 登入名單 ──────────────────────────────────────────────
 
 /** 允許以 Google 帳號登入的名單；文件 id 為小寫 email */
-/** role：COMMAND（指揮中心）| STATION（站點人員）；舊資料沒有 role 時視為站點人員 */
-export type AllowedUser = { id: string; email: string; note: string; role?: string; createdAt: Date };
+export type AllowedUser = {
+  id: string;
+  email: string;
+  note: string;
+  /** 可複選：COMMAND（指揮中心）、STATION（站點人員） */
+  roles?: string[];
+  /** 舊版的單一角色欄位，讀取時轉成 roles */
+  role?: string;
+  createdAt: Date;
+};
+
+/** 讀出成員的角色：舊資料的「指揮中心」原本可進入所有頁面，轉為兩者皆有；沒有角色時視為站點人員 */
+export function rolesOfMember(u: Pick<AllowedUser, "roles" | "role">): string[] {
+  if (u.roles) return u.roles;
+  return u.role === "COMMAND" ? ["COMMAND", "STATION"] : ["STATION"];
+}
 
 export const emailId = (email: string) => email.trim().toLowerCase();
 
@@ -308,18 +322,18 @@ export async function listAllowedUsers() {
 }
 
 /** 回傳名單上的角色；不在名單上回傳 null */
-export async function getAllowedRole(email: string): Promise<string | null> {
+export async function getAllowedRoles(email: string): Promise<string[] | null> {
   const snap = await col.allowedUsers.doc(emailId(email)).get();
-  return snap.exists ? ((snap.get("role") as string | undefined) ?? "STATION") : null;
+  return snap.exists ? rolesOfMember(snap.data() as AllowedUser) : null;
 }
 
-export async function addAllowedUser(email: string, note: string, role: string) {
+export async function addAllowedUser(email: string, note: string, roles: string[]) {
   const id = emailId(email);
-  await col.allowedUsers.doc(id).set({ email: id, note, role, createdAt: new Date() });
+  await col.allowedUsers.doc(id).set({ email: id, note, roles, createdAt: new Date() });
 }
 
-export async function setAllowedUserRole(email: string, role: string) {
-  await col.allowedUsers.doc(emailId(email)).update({ role });
+export async function setAllowedUserRoles(email: string, roles: string[]) {
+  await col.allowedUsers.doc(emailId(email)).update({ roles });
 }
 
 export async function removeAllowedUser(email: string) {

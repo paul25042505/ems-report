@@ -11,8 +11,8 @@ export async function currentUser() {
   const h = await headers();
   const email = h.get("x-user-email") ?? "";
   const name = decodeURIComponent(h.get("x-user-name") ?? "") || email;
-  const role = h.get("x-user-role") === "COMMAND" ? "COMMAND" : "STATION";
-  return { email, name, role } as const;
+  const roles = (h.get("x-user-roles") ?? "").split(",").filter(Boolean);
+  return { email, name, roles };
 }
 
 async function who(where: string) {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, requiresCommand, verifySession } from "@/lib/access";
+import { SESSION_COOKIE, requiredRole, verifySession } from "@/lib/access";
 
 /** 除了登入頁與登入 API 外，所有頁面都需要以名單上的 Google 帳號登入 */
 export async function middleware(req: NextRequest) {
@@ -18,16 +18,17 @@ export async function middleware(req: NextRequest) {
   const headers = new Headers(req.headers);
   headers.set("x-user-email", user.email);
   headers.set("x-user-name", encodeURIComponent(user.name));
-  headers.set("x-user-role", user.role);
+  headers.set("x-user-roles", user.roles.join(","));
 
-  // 站點人員不能進入指揮中心、系統管理與匯出
-  if (user.role !== "COMMAND" && requiresCommand(req.nextUrl.pathname)) {
+  // 沒有對應角色就擋下：指揮中心／系統管理／匯出需要「指揮中心」，救護站需要「站點人員」
+  const need = requiredRole(req.nextUrl.pathname);
+  if (need && !user.roles.includes(need)) {
     if (req.nextUrl.pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "沒有指揮中心權限" }, { status: 403 });
+      return NextResponse.json({ error: "沒有權限" }, { status: 403 });
     }
     const url = req.nextUrl.clone();
     url.pathname = "/forbidden";
-    url.search = "";
+    url.search = `?need=${need}`;
     return NextResponse.rewrite(url, { request: { headers } });
   }
 

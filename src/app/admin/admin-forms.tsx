@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { addAllowedUser, createEvent, createStation, updateEvent, updateStation } from "./actions";
+import { addAllowedUser, createEvent, createStation, setMemberRoles, updateEvent, updateStation } from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { MEMBER_ROLES, STATION_STATUS } from "@/lib/constants";
 
@@ -93,18 +93,12 @@ export function AllowedUserForm() {
   return (
     <ActionForm action={action} resetOn={state} className="space-y-3">
       <FormMessage state={state} />
-      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
+      <div className="grid gap-3 sm:grid-cols-[2fr_auto_1fr_auto] sm:items-end">
         <Field label="Google 帳號（Email）" name="email" id="allowed-email" state={state}>
           <input id="allowed-email" name="email" type="email" className="input" placeholder="someone@gmail.com" required autoComplete="off" />
         </Field>
-        <Field label="角色" name="role" id="allowed-role" state={state}>
-          <select id="allowed-role" name="role" className="input" defaultValue="STATION">
-            {MEMBER_ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+        <Field label="角色（可複選）" name="roles" id="allowed-role-station" state={state}>
+          <RoleCheckboxes idPrefix="allowed" defaults={["STATION"]} />
         </Field>
         <Field label="備註" name="note" id="allowed-note" state={state}>
           <input id="allowed-note" name="note" className="input" placeholder="例：主站 王醫務士" maxLength={50} />
@@ -113,6 +107,41 @@ export function AllowedUserForm() {
           加入名單
         </SubmitButton>
       </div>
+    </ActionForm>
+  );
+}
+
+function RoleCheckboxes({ idPrefix, defaults }: { idPrefix: string; defaults: string[] }) {
+  return (
+    <div className="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1">
+      {MEMBER_ROLES.map((r) => (
+        <label key={r.value} className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap">
+          <input
+            type="checkbox"
+            id={`${idPrefix}-role-${r.value.toLowerCase()}`}
+            name={r.value === "COMMAND" ? "roleCommand" : "roleStation"}
+            defaultChecked={defaults.includes(r.value)}
+            className="h-5 w-5"
+          />
+          {r.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/** 名單上每位成員的角色勾選與儲存 */
+export function MemberRolesForm({ email, roles }: { email: string; roles: string[] }) {
+  const [state, action, pending] = useActionState(setMemberRoles.bind(null, email), {});
+  return (
+    <ActionForm action={action} className="flex flex-wrap items-center gap-2">
+      <RoleCheckboxes idPrefix={email} defaults={roles} />
+      <SubmitButton className="btn-secondary btn-sm" pending={pending}>
+        儲存
+      </SubmitButton>
+      {(state.error || state.message) && (
+        <span className={`text-xs font-semibold ${state.error ? "text-red-700" : "text-green-700"}`}>{state.error ?? state.message}</span>
+      )}
     </ActionForm>
   );
 }

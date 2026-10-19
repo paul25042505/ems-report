@@ -56,20 +56,33 @@ test("不在名單上的帳號無法登入；加入名單後可以登入，移�
   await expect(medic.getByRole("heading", { name: "您沒有指揮中心的權限" })).toBeVisible();
   expect((await medic.request.get("/api/export/patients")).status()).toBe(403);
 
-  // 指揮中心角色：可以進指揮中心
+  // 只勾「指揮中心」：可以進指揮中心，進不了救護站
   await owner.getByLabel("Google 帳號（Email）").fill("leader@example.com");
-  await owner.getByLabel("角色").selectOption("COMMAND");
+  await owner.locator("#allowed-role-command").check();
+  await owner.locator("#allowed-role-station").uncheck();
   await owner.getByRole("button", { name: "加入名單" }).click();
   await expect(owner.getByText("已加入 leader@example.com（指揮中心）")).toBeVisible();
   const leader = await browser.newPage();
   expect(await login(leader, "leader@example.com")).toBe(200);
   await leader.goto("/command");
   await expect(leader.getByRole("link", { name: "系統管理" })).toBeVisible();
+  await leader.goto("/station");
+  await expect(leader.getByRole("heading", { name: "您沒有站點人員的權限" })).toBeVisible();
 
-  // 名單上可以切換角色
+  // 兩個都不勾會被擋下
+  await owner.getByLabel("Google 帳號（Email）").fill("nobody@example.com");
+  await owner.locator("#allowed-role-command").uncheck();
+  await owner.locator("#allowed-role-station").uncheck();
+  await owner.getByRole("button", { name: "加入名單" }).click();
+  await expect(owner.getByText("請至少勾選一個角色")).toBeVisible();
+
+  // 名單上可以複選角色並儲存
   const medicRow = owner.locator("li", { hasText: "medic@example.com" });
-  await medicRow.getByRole("button", { name: "改為指揮中心" }).click();
-  await expect(medicRow.getByRole("button", { name: "改為站點人員" })).toBeVisible();
+  await medicRow.getByLabel("指揮中心").check();
+  await medicRow.getByRole("button", { name: "儲存" }).click();
+  await expect(medicRow.getByText("已儲存")).toBeVisible();
+  await expect(medicRow.getByLabel("指揮中心")).toBeChecked();
+  await expect(medicRow.getByLabel("站點人員")).toBeChecked();
 
   await owner.locator("li", { hasText: "medic@example.com" }).getByRole("button", { name: "移出" }).click();
   await expect(owner.locator("li", { hasText: "medic@example.com" })).toHaveCount(0);
