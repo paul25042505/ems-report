@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getRequest, updateRequest as saveRequest } from "@/lib/repo";
 import { audit } from "@/lib/audit";
-import { COMMAND_ACTOR } from "@/lib/context";
+import { commandActor, currentUser } from "@/lib/context";
 import { parseForm, requestUpdateSchema, type ActionState } from "@/lib/validation";
 
 export async function updateRequest(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -13,8 +13,8 @@ export async function updateRequest(_prev: ActionState, formData: FormData): Pro
 
   const existing = await getRequest(id);
   if (!existing) return { error: "找不到這筆申請" };
-  await saveRequest(id, { status, response, handlerName: COMMAND_ACTOR.name });
-  await audit(COMMAND_ACTOR, "處理支援申請", "SupportRequest", id, { status, response });
+  await saveRequest(id, { status, response, handlerName: (await currentUser()).name || "指揮中心" });
+  await audit(await commandActor(), "處理支援申請", "SupportRequest", id, { status, response });
   revalidatePath("/command/requests");
   return { ok: true, message: "已更新" };
 }

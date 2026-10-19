@@ -4,7 +4,7 @@
   "private": true,
   "description": "國防知性之旅 救護站資訊回報系統",
   "scripts": {
-    "dev": "firebase emulators:exec --only firestore --project demo-ems \"tsx scripts/seed.ts && next dev\"",
+    "dev": "firebase emulators:exec --only firestore,auth --project demo-ems \"tsx scripts/seed.ts && next dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -14,6 +14,7 @@
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "firebase": "12.19.0",
     "firebase-admin": "14.5.0",
     "leaflet": "1.9.4",
     "next": "15.5.28",

@@ -1,7 +1,51 @@
 import { expect, test } from "@playwright/test";
-import { choose, enterCommand, enterStation } from "./helpers";
+import { choose, enterCommand, enterStation, login } from "./helpers";
 
-test("首頁兩個入口，不需登入", async ({ page }) => {
+test("未登入時導向 Google 登入頁，API 也擋下", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("button", { name: "使用 Google 帳號登入" })).toBeVisible();
+  await page.goto("/command");
+  await expect(page).toHaveURL(/\/login$/);
+  expect((await page.request.get("/api/export/patients")).status()).toBe(401);
+});
+
+test("不在名單上的帳號無法登入；加入名單後可以登入，移出後失效", async ({ browser }) => {
+  const outsider = await browser.newPage();
+  expect(await login(outsider, "outsider@example.com")).toBe(403);
+  await outsider.goto("/");
+  await expect(outsider).toHaveURL(/\/login$/);
+
+  const owner = await browser.newPage();
+  await enterCommand(owner);
+  await owner.getByRole("link", { name: "系統管理" }).click();
+  await owner.getByRole("link", { name: "登入名單" }).click();
+  await expect(owner.getByText("owner@example.com")).toBeVisible();
+  await owner.getByLabel("Google 帳號（Email）").fill("Medic@Example.com");
+  await owner.getByLabel("備註").fill("主站醫務士");
+  await owner.getByRole("button", { name: "加入名單" }).click();
+  await expect(owner.getByText("已加入 medic@example.com")).toBeVisible();
+
+  const medic = await browser.newPage();
+  expect(await login(medic, "medic@example.com")).toBe(200);
+  await medic.goto("/");
+  await expect(medic.getByRole("link", { name: "站點人員" })).toBeVisible();
+  await expect(medic.getByText("medic@example.com")).toBeVisible();
+
+  await owner.locator("li", { hasText: "medic@example.com" }).getByRole("button", { name: "移出" }).click();
+  await expect(owner.locator("li", { hasText: "medic@example.com" })).toHaveCount(0);
+});
+
+test("登出後回到登入頁", async ({ page }) => {
+  await enterCommand(page);
+  await page.getByRole("button", { name: "登出" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/command");
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+test("首頁兩個入口", async ({ page }) => {
+  await login(page);
   await page.goto("/");
   await expect(page.getByRole("link", { name: "站點人員" })).toBeVisible();
   await expect(page.getByRole("link", { name: "指揮中心" })).toBeVisible();
@@ -108,6 +152,7 @@ test("刪除傷患紀錄（需確認）", async ({ browser }) => {
   await expect(command.getByText("待刪除測試")).toHaveCount(0);
   await command.goto("/admin/audit");
   await expect(command.getByRole("cell", { name: "刪除傷患紀錄" })).toBeVisible();
+  await expect(command.getByText("分站B／owner（owner@example.com）").first()).toBeVisible(); // 記錄操作的 Google 帳號
 });
 
 test("表單缺漏欄位時顯示錯誤，保留已填內容", async ({ page }) => {

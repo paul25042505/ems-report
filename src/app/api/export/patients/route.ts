@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { audit } from "@/lib/audit";
-import { COMMAND_ACTOR } from "@/lib/context";
+import { commandActor } from "@/lib/context";
 import { resolveEvent } from "@/lib/dashboard";
 import { findPatients, type PatientFilter } from "@/lib/patient-query";
 import {
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     ]),
   ];
 
-  await audit(COMMAND_ACTOR, "匯出傷患紀錄", "Event", event.id, { filter, count: patients.length });
+  await audit(await commandActor(), "匯出傷患紀錄", "Event", event.id, { filter, count: patients.length });
 
   const filename = encodeURIComponent(`傷患紀錄_${event.name}_${toLocalDateInput(new Date())}.csv`);
   return new NextResponse(toCsv(rows), {

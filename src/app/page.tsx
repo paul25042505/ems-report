@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { currentUser } from "@/lib/context";
+import { LogoutButton } from "@/components/logout-button";
 
-export default function Home() {
+export default async function Home() {
+  const user = await currentUser();
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
@@ -16,6 +19,10 @@ export default function Home() {
           <Link href="/command" className="btn-dark py-8 text-2xl">
             指揮中心
           </Link>
+        </div>
+        <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
+          <span>{user.email}</span>
+          <LogoutButton className="text-red-700 underline" />
         </div>
       </div>
     </main>

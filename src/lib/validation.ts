@@ -144,6 +144,11 @@ export const stationSchema = z.object({
   status: pick(STATION_STATUS),
 });
 
+export const allowedUserSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email({ error: "請輸入正確的 Email" })),
+  note: text(50),
+});
+
 export type ActionState = {
   ok?: boolean;
   message?: string;

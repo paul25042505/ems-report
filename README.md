@@ -10,12 +10,11 @@
 
 ## 使用方式
 
-不需要登入。打開網址後首頁有兩個按鈕：
-
-- **站點人員** → 點選所屬救護站 → 進入該站的回報頁
-- **指揮中心** → 直接進入看板；「系統管理」也在這裡
-
-> ⚠ 沒有登入機制，知道網址的人都能看到並修改資料，網址請只提供給工作人員。
+1. 打開網址，按「使用 Google 帳號登入」。只有**登入名單**上的帳號能進入，其他帳號會顯示「沒有使用權限」。
+2. 登入後首頁有兩個按鈕：
+   - **站點人員** → 點選所屬救護站 → 進入該站的回報頁
+   - **指揮中心** → 直接進入看板；「系統管理」也在這裡
+3. 登入名單在「指揮中心 → 系統管理 → 登入名單」新增或移除。`apphosting.yaml` 的 `OWNER_EMAILS` 是系統擁有者，一定能登入且不能被移除。
 
 ## 功能
 
@@ -77,12 +76,14 @@ npx firebase deploy --only apphosting,firestore:rules
 
 ## 本機開發
 
-需要 Node.js 22 與 Java 11 以上（Firestore 模擬器）。
+需要 Node.js 22 與 Java 11 以上（Firebase 模擬器）。
 
 ```bash
 npm install
-npm run dev                     # 啟動 Firestore 模擬器、寫入示範資料，http://localhost:3000
+npm run dev                     # 啟動 Firestore 與 Auth 模擬器、寫入示範資料，http://localhost:3000
 ```
+
+本機的 Google 登入是模擬器的假帳號畫面，按「Add new account」並以 `dev@example.com` 登入即為擁有者（見 `.env.development`）。
 
 本機資料存在模擬器的記憶體中，停止後即清除，不會動到正式的 Firestore。
 
@@ -99,6 +100,8 @@ npm run test:e2e                # 端對端測試（自動啟動 Firestore 模�
 
 | 變數 | 說明 |
 |---|---|
+| `OWNER_EMAILS` | 系統擁有者的 Google 帳號（逗號分隔），一定能登入且不能從名單移除 |
+| `NEXT_PUBLIC_FIREBASE_*` | Firebase 網頁設定（公開資訊），瀏覽器端 Google 登入使用 |
 | `FIRESTORE_DATABASE_ID` | 選填，非預設的 Firestore 資料庫 ID |
 
 ## 後續可擴充

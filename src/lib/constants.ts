@@ -9,6 +9,7 @@ function labelOf<T extends string | number>(options: readonly Option<T>[], value
 export const ROLE_LABELS: Record<string, string> = {
   STATION: "站點",
   COMMAND: "指揮中心",
+  LOGIN: "登入",
 };
 
 export const STATION_STATUS = [

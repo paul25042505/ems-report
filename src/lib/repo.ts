@@ -102,6 +102,7 @@ const col = {
   supplies: firestore.collection("supplies"),
   requests: firestore.collection("requests"),
   auditLogs: firestore.collection("auditLogs"),
+  allowedUsers: firestore.collection("allowedUsers"),
 };
 
 /** Firestore 的 Timestamp 轉回 Date */
@@ -292,4 +293,28 @@ export async function addAuditLog(data: Omit<AuditLog, "id" | "createdAt">) {
 
 export async function listAuditLogs(limit: number) {
   return all<AuditLog>(col.auditLogs.orderBy("createdAt", "desc").limit(limit));
+}
+
+// ── 登入名單 ──────────────────────────────────────────────
+
+/** 允許以 Google 帳號登入的名單；文件 id 為小寫 email */
+export type AllowedUser = { id: string; email: string; note: string; createdAt: Date };
+
+export const emailId = (email: string) => email.trim().toLowerCase();
+
+export async function listAllowedUsers() {
+  return (await all<AllowedUser>(col.allowedUsers)).sort(byAsc((u) => u.createdAt));
+}
+
+export async function isEmailAllowed(email: string) {
+  return (await col.allowedUsers.doc(emailId(email)).get()).exists;
+}
+
+export async function addAllowedUser(email: string, note: string) {
+  const id = emailId(email);
+  await col.allowedUsers.doc(id).set({ email: id, note, createdAt: new Date() });
+}
+
+export async function removeAllowedUser(email: string) {
+  await col.allowedUsers.doc(emailId(email)).delete();
 }

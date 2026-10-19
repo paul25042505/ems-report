@@ -5,3 +5,21 @@ runConfig:
   concurrency: 80
   cpu: 1
   memoryMiB: 512
+
+env:
+  # 系統擁有者：一定可以登入，且不能從登入名單移除（逗號分隔）
+  - variable: OWNER_EMAILS
+    value: paul25042505@gmail.com
+  # Firebase 網頁設定（公開資訊），給瀏覽器端 Google 登入使用
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDX6jJ8S3WaQ5piUYmvfmbecJDP2V0jTzM
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: ems-report-29cc5.firebaseapp.com
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: ems-report-29cc5
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:82980990224:web:5831ecee839a7bb6f34995"
+    availability: [BUILD, RUNTIME]

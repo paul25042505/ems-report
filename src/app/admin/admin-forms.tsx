@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { createEvent, createStation, updateEvent, updateStation } from "./actions";
+import { addAllowedUser, createEvent, createStation, updateEvent, updateStation } from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { STATION_STATUS } from "@/lib/constants";
 
@@ -84,6 +84,26 @@ export function StationForm({ eventId, station }: { eventId: string; station?: S
       <SubmitButton className="btn-dark" pending={pending}>
         {station ? "儲存站點" : "新增救護站"}
       </SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function AllowedUserForm() {
+  const [state, action, pending] = useActionState(addAllowedUser, {});
+  return (
+    <ActionForm action={action} resetOn={state} className="space-y-3">
+      <FormMessage state={state} />
+      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-end">
+        <Field label="Google 帳號（Email）" name="email" id="allowed-email" state={state}>
+          <input id="allowed-email" name="email" type="email" className="input" placeholder="someone@gmail.com" required autoComplete="off" />
+        </Field>
+        <Field label="備註" name="note" id="allowed-note" state={state}>
+          <input id="allowed-note" name="note" className="input" placeholder="例：主站 王醫務士" maxLength={50} />
+        </Field>
+        <SubmitButton className="btn-dark" pending={pending}>
+          加入名單
+        </SubmitButton>
+      </div>
     </ActionForm>
   );
 }

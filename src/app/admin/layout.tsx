@@ -10,6 +10,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin" className="btn-secondary btn-sm">
             場次與救護站
           </Link>
+          <Link href="/admin/users" className="btn-secondary btn-sm">
+            登入名單
+          </Link>
           <Link href="/admin/audit" className="btn-secondary btn-sm">
             操作紀錄
           </Link>
