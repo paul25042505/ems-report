@@ -107,7 +107,8 @@ export function computeAlerts(
 
   for (const s of input.stations) {
     if (s.status !== "OPEN") continue;
-    const stale = !s.lastReportAt || minutesSince(s.lastReportAt, now) > STALE_REPORT_MINUTES;
+    // 從沒回報過的站不警告，第一次回報後才開始計時
+    const stale = s.lastReportAt !== null && minutesSince(s.lastReportAt, now) > STALE_REPORT_MINUTES;
     if (stale) {
       alerts.push({
         level: "warning",

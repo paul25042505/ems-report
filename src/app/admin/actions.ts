@@ -6,7 +6,7 @@ import * as repo from "@/lib/repo";
 import { audit } from "@/lib/audit";
 import { commandActor, currentUser } from "@/lib/context";
 import { forgetAllowed, ownerEmails } from "@/lib/access";
-import { DEFAULT_SUPPLIES } from "@/lib/constants";
+import { DEFAULT_SUPPLIES, memberRoleLabel } from "@/lib/constants";
 import {
   allowedUserSchema,
   eventSchema,
@@ -70,11 +70,11 @@ export async function deleteStation(stationId: string) {
 export async function addAllowedUser(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = parseForm(allowedUserSchema, formData);
   if (!parsed.success) return parsed.state;
-  await repo.addAllowedUser(parsed.data.email, parsed.data.note);
+  await repo.addAllowedUser(parsed.data.email, parsed.data.note, parsed.data.role);
   forgetAllowed(parsed.data.email);
   await audit(await commandActor(), "加入登入名單", "AllowedUser", parsed.data.email, parsed.data);
   revalidatePath("/admin/users");
-  return { ok: true, message: `已加入 ${parsed.data.email}` };
+  return { ok: true, message: `已加入 ${parsed.data.email}（${memberRoleLabel(parsed.data.role)}）` };
 }
 
 export async function removeAllowedUser(email: string) {
@@ -83,5 +83,14 @@ export async function removeAllowedUser(email: string) {
   await repo.removeAllowedUser(email);
   forgetAllowed(email);
   await audit(await commandActor(), "移出登入名單", "AllowedUser", email);
+  revalidatePath("/admin/users");
+}
+
+export async function setMemberRole(email: string, role: "COMMAND" | "STATION") {
+  // 不能改自己的角色，避免把自己鎖在系統管理外面；擁有者固定為指揮中心
+  if (ownerEmails().includes(repo.emailId(email)) || repo.emailId(email) === (await currentUser()).email) return;
+  await repo.setAllowedUserRole(email, role);
+  forgetAllowed(email);
+  await audit(await commandActor(), "變更成員角色", "AllowedUser", email, { role });
   revalidatePath("/admin/users");
 }

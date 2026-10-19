@@ -23,14 +23,38 @@ test("不在名單上的帳號無法登入；加入名單後可以登入，移�
   await expect(owner.getByText("owner@example.com")).toBeVisible();
   await owner.getByLabel("Google 帳號（Email）").fill("Medic@Example.com");
   await owner.getByLabel("備註").fill("主站醫務士");
-  await owner.getByRole("button", { name: "加入名單" }).click();
-  await expect(owner.getByText("已加入 medic@example.com")).toBeVisible();
+  await owner.getByRole("button", { name: "加入名單" }).click(); // 角色預設為站點人員
+  await expect(owner.getByText("已加入 medic@example.com（站點人員）")).toBeVisible();
 
+  // 站點人員：可以進救護站，點「指揮中心」被擋下
   const medic = await browser.newPage();
   expect(await login(medic, "medic@example.com")).toBe(200);
   await medic.goto("/");
-  await expect(medic.getByRole("link", { name: "站點人員" })).toBeVisible();
   await expect(medic.getByText("medic@example.com")).toBeVisible();
+  await medic.getByRole("link", { name: "站點人員" }).click();
+  await medic.getByRole("link", { name: /^主站/ }).click();
+  await expect(medic.getByRole("heading", { name: "主站", exact: true })).toBeVisible();
+  await medic.goto("/");
+  await medic.getByRole("link", { name: "指揮中心" }).click();
+  await expect(medic.getByRole("heading", { name: "您沒有指揮中心的權限" })).toBeVisible();
+  await medic.goto("/admin/users");
+  await expect(medic.getByRole("heading", { name: "您沒有指揮中心的權限" })).toBeVisible();
+  expect((await medic.request.get("/api/export/patients")).status()).toBe(403);
+
+  // 指揮中心角色：可以進指揮中心
+  await owner.getByLabel("Google 帳號（Email）").fill("leader@example.com");
+  await owner.getByLabel("角色").selectOption("COMMAND");
+  await owner.getByRole("button", { name: "加入名單" }).click();
+  await expect(owner.getByText("已加入 leader@example.com（指揮中心）")).toBeVisible();
+  const leader = await browser.newPage();
+  expect(await login(leader, "leader@example.com")).toBe(200);
+  await leader.goto("/command");
+  await expect(leader.getByRole("link", { name: "系統管理" })).toBeVisible();
+
+  // 名單上可以切換角色
+  const medicRow = owner.locator("li", { hasText: "medic@example.com" });
+  await medicRow.getByRole("button", { name: "改為指揮中心" }).click();
+  await expect(medicRow.getByRole("button", { name: "改為站點人員" })).toBeVisible();
 
   await owner.locator("li", { hasText: "medic@example.com" }).getByRole("button", { name: "移出" }).click();
   await expect(owner.locator("li", { hasText: "medic@example.com" })).toHaveCount(0);

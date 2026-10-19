@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { addAllowedUser, createEvent, createStation, updateEvent, updateStation } from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
-import { STATION_STATUS } from "@/lib/constants";
+import { MEMBER_ROLES, STATION_STATUS } from "@/lib/constants";
 
 export function EventForm({ event }: { event?: { id: string; name: string; venue: string; startDate: string; endDate: string } }) {
   const [state, action, pending] = useActionState(event ? updateEvent.bind(null, event.id) : createEvent, {});
@@ -93,9 +93,18 @@ export function AllowedUserForm() {
   return (
     <ActionForm action={action} resetOn={state} className="space-y-3">
       <FormMessage state={state} />
-      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-end">
+      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
         <Field label="Google 帳號（Email）" name="email" id="allowed-email" state={state}>
           <input id="allowed-email" name="email" type="email" className="input" placeholder="someone@gmail.com" required autoComplete="off" />
+        </Field>
+        <Field label="角色" name="role" id="allowed-role" state={state}>
+          <select id="allowed-role" name="role" className="input" defaultValue="STATION">
+            {MEMBER_ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="備註" name="note" id="allowed-note" state={state}>
           <input id="allowed-note" name="note" className="input" placeholder="例：主站 王醫務士" maxLength={50} />

@@ -6,6 +6,14 @@ function labelOf<T extends string | number>(options: readonly Option<T>[], value
   return options.find((o) => o.value === value)?.label ?? String(value);
 }
 
+/** 登入名單上的成員角色 */
+export const MEMBER_ROLES = [
+  { value: "COMMAND", label: "指揮中心" },
+  { value: "STATION", label: "站點人員" },
+] as const satisfies readonly Option<string>[];
+export type MemberRole = (typeof MEMBER_ROLES)[number]["value"];
+export const memberRoleLabel = (v: string) => labelOf(MEMBER_ROLES, v);
+
 export const ROLE_LABELS: Record<string, string> = {
   STATION: "站點",
   COMMAND: "指揮中心",

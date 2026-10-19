@@ -7,6 +7,7 @@ import {
   REQUEST_STATUS,
   REQUEST_TYPES,
   SEXES,
+  MEMBER_ROLES,
   MILITARY_RANKS,
   STATION_STATUS,
   ageGroupOf,
@@ -146,6 +147,7 @@ export const stationSchema = z.object({
 
 export const allowedUserSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email({ error: "請輸入正確的 Email" })),
+  role: pick(MEMBER_ROLES, "請選擇角色"),
   note: text(50),
 });
 

@@ -298,7 +298,8 @@ export async function listAuditLogs(limit: number) {
 // ── 登入名單 ──────────────────────────────────────────────
 
 /** 允許以 Google 帳號登入的名單；文件 id 為小寫 email */
-export type AllowedUser = { id: string; email: string; note: string; createdAt: Date };
+/** role：COMMAND（指揮中心）| STATION（站點人員）；舊資料沒有 role 時視為站點人員 */
+export type AllowedUser = { id: string; email: string; note: string; role?: string; createdAt: Date };
 
 export const emailId = (email: string) => email.trim().toLowerCase();
 
@@ -306,13 +307,19 @@ export async function listAllowedUsers() {
   return (await all<AllowedUser>(col.allowedUsers)).sort(byAsc((u) => u.createdAt));
 }
 
-export async function isEmailAllowed(email: string) {
-  return (await col.allowedUsers.doc(emailId(email)).get()).exists;
+/** 回傳名單上的角色；不在名單上回傳 null */
+export async function getAllowedRole(email: string): Promise<string | null> {
+  const snap = await col.allowedUsers.doc(emailId(email)).get();
+  return snap.exists ? ((snap.get("role") as string | undefined) ?? "STATION") : null;
 }
 
-export async function addAllowedUser(email: string, note: string) {
+export async function addAllowedUser(email: string, note: string, role: string) {
   const id = emailId(email);
-  await col.allowedUsers.doc(id).set({ email: id, note, createdAt: new Date() });
+  await col.allowedUsers.doc(id).set({ email: id, note, role, createdAt: new Date() });
+}
+
+export async function setAllowedUserRole(email: string, role: string) {
+  await col.allowedUsers.doc(emailId(email)).update({ role });
 }
 
 export async function removeAllowedUser(email: string) {

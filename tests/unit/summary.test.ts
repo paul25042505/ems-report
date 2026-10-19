@@ -23,6 +23,7 @@ const stations = [
   { id: "s1", name: "主站", status: "OPEN", lastReportAt: new Date("2026-10-18T05:50:00Z") },
   { id: "s2", name: "分站A", status: "OPEN", lastReportAt: new Date("2026-10-18T04:00:00Z") },
   { id: "s3", name: "分站B", status: "CLOSED", lastReportAt: null },
+  { id: "s4", name: "分站C", status: "OPEN", lastReportAt: null },
 ];
 
 describe("統計", () => {
@@ -86,6 +87,7 @@ describe("警告", () => {
     expect(messages.some((m) => m.startsWith("分站A：超過 60 分鐘未回報"))).toBe(true);
     expect(messages.some((m) => m.startsWith("主站：超過"))).toBe(false);
     expect(messages.some((m) => m.includes("分站B：超過"))).toBe(false);
+    expect(messages.some((m) => m.includes("分站C：超過"))).toBe(false); // 從沒回報過不警告
     expect(messages.some((m) => m.includes("「物資補給」"))).toBe(false); // 一般申請不列入警告
   });
 });

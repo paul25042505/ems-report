@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, SESSION_MS, isAllowed } from "@/lib/access";
+import { SESSION_COOKIE, SESSION_MS, roleOf } from "@/lib/access";
 import { addAuditLog } from "@/lib/repo";
 import { adminAuth } from "@/lib/firestore";
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "登入驗證失敗，請重新登入" }, { status: 401 });
   }
 
-  if (!email || !(await isAllowed(email))) {
+  if (!email || !(await roleOf(email))) {
     return NextResponse.json({ error: `${email ?? "此帳號"} 沒有使用權限，請聯絡管理員加入登入名單` }, { status: 403 });
   }
 
