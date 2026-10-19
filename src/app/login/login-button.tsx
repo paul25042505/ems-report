@@ -1,14 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { clientAuth } from "@/lib/firebase-client";
+
+/** App 內建瀏覽器（LINE、Facebook、Instagram、WeChat 等）無法使用 Google 登入 */
+const IN_APP_BROWSER = /Line\/|FBAN|FBAV|Instagram|MicroMessenger|; wv\)/i;
 
 export function GoogleLoginButton() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [inApp, setInApp] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    // LINE 支援 openExternalBrowser=1，會自動改用手機的預設瀏覽器開啟
+    if (/Line\//i.test(ua) && !location.search.includes("openExternalBrowser")) {
+      location.replace(`${location.origin}/login?openExternalBrowser=1`);
+      return;
+    }
+    setInApp(IN_APP_BROWSER.test(ua));
+  }, []);
 
   async function login() {
     setError("");
@@ -43,6 +58,22 @@ export function GoogleLoginButton() {
 
   return (
     <div className="space-y-3">
+      {inApp && (
+        <div role="alert" className="space-y-2 rounded-lg bg-amber-50 px-3 py-3 text-sm text-amber-900 ring-1 ring-amber-200">
+          <p className="font-semibold">請用 Chrome 或 Safari 開啟</p>
+          <p>目前是在 App 內建的瀏覽器（例如 LINE、Facebook），無法使用 Google 登入。請點右上角「⋮」或「分享」選擇「用瀏覽器開啟」，或複製網址貼到 Chrome／Safari。</p>
+          <button
+            type="button"
+            className="btn-secondary btn-sm w-full"
+            onClick={async () => {
+              await navigator.clipboard?.writeText(`${location.origin}/login`).catch(() => {});
+              setCopied(true);
+            }}
+          >
+            {copied ? "已複製網址" : "複製網址"}
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-red-200">
           {error}

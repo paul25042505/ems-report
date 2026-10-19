@@ -10,6 +10,21 @@ test("未登入時導向 Google 登入頁，API 也擋下", async ({ page }) => 
   expect((await page.request.get("/api/export/patients")).status()).toBe(401);
 });
 
+test("LINE 內建瀏覽器自動改用外部瀏覽器；其他 App 內建瀏覽器顯示提示", async ({ browser }) => {
+  const line = await browser.newPage({ userAgent: "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Mobile Safari/537.36 Line/14.0.0" });
+  await line.goto("/");
+  await expect(line).toHaveURL(/\/login\?openExternalBrowser=1$/);
+
+  const fb = await browser.newPage({ userAgent: "Mozilla/5.0 (iPhone) AppleWebKit/605.1.15 Mobile/15E148 [FBAN/FBIOS;FBAV/450.0]" });
+  await fb.goto("/login");
+  await expect(fb.getByText("請用 Chrome 或 Safari 開啟")).toBeVisible();
+
+  const normal = await browser.newPage();
+  await normal.goto("/login");
+  await expect(normal.getByRole("button", { name: "使用 Google 帳號登入" })).toBeVisible();
+  await expect(normal.getByText("請用 Chrome 或 Safari 開啟")).toHaveCount(0);
+});
+
 test("不在名單上的帳號無法登入；加入名單後可以登入，移出後失效", async ({ browser }) => {
   const outsider = await browser.newPage();
   expect(await login(outsider, "outsider@example.com")).toBe(403);
