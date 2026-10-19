@@ -51,8 +51,8 @@ describe("統計", () => {
   });
 });
 
-describe("告警", () => {
-  it("產生各類告警且危急排在前面", () => {
+describe("警告", () => {
+  it("產生各類警告且危急排在前面", () => {
     const alerts = computeAlerts(
       {
         stations,
@@ -82,11 +82,11 @@ describe("告警", () => {
     expect(messages.some((m) => m.includes("舊後送"))).toBe(false); // 超過 30 分鐘
     expect(messages.some((m) => m.includes("冰敷袋 剩 3個"))).toBe(true);
     expect(messages.some((m) => m.includes("紗布"))).toBe(false);
-    expect(messages.some((m) => m.includes("飲用水"))).toBe(false); // 已撤站不告警
+    expect(messages.some((m) => m.includes("飲用水"))).toBe(false); // 已撤站不警告
     expect(messages.some((m) => m.startsWith("分站A：超過 60 分鐘未回報"))).toBe(true);
     expect(messages.some((m) => m.startsWith("主站：超過"))).toBe(false);
     expect(messages.some((m) => m.includes("分站B：超過"))).toBe(false);
-    expect(messages.some((m) => m.includes("「物資補給」"))).toBe(false); // 一般申請不列入告警
+    expect(messages.some((m) => m.includes("「物資補給」"))).toBe(false); // 一般申請不列入警告
   });
 });
 

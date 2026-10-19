@@ -56,7 +56,7 @@ test("首頁兩個入口", async ({ page }) => {
   }
 });
 
-test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CSV", async ({ browser }) => {
+test("站點登記傷患 → 指揮中心看到紀錄、後送警告並匯出 CSV", async ({ browser }) => {
   const reporter = await browser.newPage();
   await enterStation(reporter, "分站A");
 
@@ -88,7 +88,7 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送告警並匯出 CS
   expect(body).toContain("E2E測試：意識不清");
   expect(body).toContain("民眾,,測試王小明,女,70,長者(65+)");
 
-  // 改為後送 → 指揮中心出現後送告警
+  // 改為後送 → 指揮中心出現後送警告
   await reporter.getByText("E2E測試：意識不清").click();
   await choose(reporter, "disposition", "後送醫院");
   await reporter.getByRole("button", { name: "儲存修改" }).click();
@@ -190,7 +190,7 @@ test("緊急支援申請 → 指揮中心回覆 → 站點看到回覆", async (
   await expect(reporter.getByText("救護車已出發")).toBeVisible();
 });
 
-test("物資低於安全存量 → 指揮中心告警", async ({ browser }) => {
+test("物資低於安全存量 → 指揮中心警告", async ({ browser }) => {
   const reporter = await browser.newPage();
   await enterStation(reporter, "主站");
   await reporter.getByRole("link", { name: "物資" }).click();

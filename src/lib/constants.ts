@@ -112,5 +112,5 @@ export const DEFAULT_SUPPLIES = [
   { name: "彈性繃帶", unit: "捲", quantity: 15, threshold: 5 },
 ] as const;
 
-/** 站點超過幾分鐘沒有任何回報動作就發出告警 */
+/** 站點超過幾分鐘沒有任何回報動作就發出警告 */
 export const STALE_REPORT_MINUTES = 60;

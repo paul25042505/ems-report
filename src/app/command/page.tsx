@@ -47,9 +47,9 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
       </div>
 
       <section className="card" aria-live="polite">
-        <h2 className="mb-2">告警（{d.alerts.length}）</h2>
+        <h2 className="mb-2">警告（{d.alerts.length}）</h2>
         {d.alerts.length === 0 ? (
-          <p className="text-sm text-green-700">✓ 目前無告警</p>
+          <p className="text-sm text-green-700">✓ 目前無警告</p>
         ) : (
           <ul className="space-y-1">
             {d.alerts.map((a, i) => (
