@@ -1,12 +1,14 @@
 import { getEventDashboard, resolveEvent } from "@/lib/dashboard";
 import {
   AGE_GROUPS,
-  CATEGORIES,
+  DEPARTMENTS,
   DISPOSITIONS,
   PATIENT_TYPES,
   SEXES,
   ageGroupLabel,
-  categoryLabel,
+  departmentLabel,
+  symptomLabel,
+  symptomsOf,
   dispositionLabel,
   patientTypeLabel,
   sexLabel,
@@ -52,6 +54,58 @@ function Breakdown({
   );
 }
 
+function topSymptom(byCategory: Record<string, number>, dept: string) {
+  return symptomsOf(dept)
+    .filter((s) => byCategory[s.value])
+    .sort((a, b) => byCategory[b.value] - byCategory[a.value])[0]?.value;
+}
+
+/** 傷病類別：內科、外科各自小計，下面列出有人數的症狀（由多到少） */
+function DepartmentBreakdown({
+  byDepartment,
+  byCategory,
+  total,
+}: {
+  byDepartment: Record<string, number>;
+  byCategory: Record<string, number>;
+  total: number;
+}) {
+  const pct = (v: number) => (total ? Math.round((v / total) * 100) : 0);
+  const depts = [...DEPARTMENTS.map((x) => x.value as string), ...(byDepartment.UNKNOWN ? ["UNKNOWN"] : [])];
+  return (
+    <section className="card">
+      <h2 className="mb-2 text-base">傷病類別（內外科）</h2>
+      <table className="table">
+        <tbody>
+          {depts.map((dept) => {
+            const n = byDepartment[dept] ?? 0;
+            const rows =
+              dept === "UNKNOWN"
+                ? []
+                : symptomsOf(dept)
+                    .filter((s) => byCategory[s.value])
+                    .sort((a, b) => byCategory[b.value] - byCategory[a.value]);
+            return [
+              <tr key={dept} className="bg-slate-50 font-bold">
+                <td>{departmentLabel(dept)} 小計</td>
+                <td className="text-right tabular-nums">{n} 人</td>
+                <td className="w-16 text-right tabular-nums">{pct(n)}%</td>
+              </tr>,
+              ...rows.map((s) => (
+                <tr key={s.value}>
+                  <td className="pl-8">{s.label}</td>
+                  <td className="text-right tabular-nums">{byCategory[s.value]} 人</td>
+                  <td className="w-16 text-right text-slate-500 tabular-nums">{pct(byCategory[s.value])}%</td>
+                </tr>
+              )),
+            ];
+          })}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 export default async function SummaryPage({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
   const { event: eventId } = await searchParams;
   const event = await resolveEvent(eventId);
@@ -80,7 +134,19 @@ export default async function SummaryPage({ searchParams }: { searchParams: Prom
           拒絕就醫 <strong>{d.totals.refused}</strong> 人、仍留站觀察 <strong>{d.totals.observing}</strong> 人。
           {total > 0 && (
             <>
-              最常見傷病為「{categoryLabel(Object.entries(d.byCategory).sort((a, b) => b[1] - a[1])[0][0])}」。
+              依科別分，
+              {DEPARTMENTS.map((dept, i) => {
+                const n = d.byDepartment[dept.value] ?? 0;
+                const top = topSymptom(d.byCategory, dept.value);
+                return (
+                  <span key={dept.value}>
+                    {i > 0 && "；"}
+                    {dept.label} <strong>{n}</strong> 人（{Math.round((n / total) * 100)}%）
+                    {top && `，最常見為「${symptomLabel(top)}」`}
+                  </span>
+                );
+              })}
+              。
             </>
           )}
         </p>
@@ -124,8 +190,9 @@ export default async function SummaryPage({ searchParams }: { searchParams: Prom
 
       <HourlyChart data={d.hourly} />
 
+      <DepartmentBreakdown byDepartment={d.byDepartment} byCategory={d.byCategory} total={total} />
+
       <div className="grid gap-3 md:grid-cols-2">
-        <Breakdown title="傷病類別" data={d.byCategory} order={CATEGORIES.map((c) => c.value)} labelOf={categoryLabel} total={total} />
         <Breakdown title="去向" data={d.byDisposition} order={DISPOSITIONS.map((c) => c.value)} labelOf={dispositionLabel} total={total} />
         <Breakdown title="身分" data={d.byPatientType} order={PATIENT_TYPES.map((c) => c.value)} labelOf={patientTypeLabel} total={total} />
         <Breakdown title="年齡層" data={d.byAgeGroup} order={AGE_GROUPS.map((c) => c.value)} labelOf={ageGroupLabel} total={total} />

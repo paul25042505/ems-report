@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { listEvents } from "@/lib/repo";
 import { getEventDashboard, resolveEvent } from "@/lib/dashboard";
-import { CATEGORIES, categoryLabel, patientTypeLabel, PATIENT_TYPES } from "@/lib/constants";
+import { departmentLabel, patientTypeLabel, symptomLabel, symptomsOf, PATIENT_TYPES } from "@/lib/constants";
 import { formatAgo } from "@/lib/time";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { StationStatusBadge } from "@/components/badges";
@@ -123,9 +123,21 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
       <HourlyChart data={d.hourly} />
 
       <div className="grid gap-3 md:grid-cols-2">
-        <BarList title="傷病類別" data={d.byCategory} order={CATEGORIES.map((c) => c.value)} labelOf={categoryLabel} />
+        <BarList
+          title="科別"
+          data={d.byDepartment}
+          order={d.byDepartment.UNKNOWN ? ["MEDICAL", "SURGICAL", "UNKNOWN"] : ["MEDICAL", "SURGICAL"]}
+          labelOf={departmentLabel}
+        />
         <BarList title="身分" data={d.byPatientType} order={PATIENT_TYPES.map((c) => c.value)} labelOf={patientTypeLabel} />
+        <BarList title="內科症狀" data={pick(d.byCategory, symptomsOf("MEDICAL"))} labelOf={symptomLabel} />
+        <BarList title="外科症狀" data={pick(d.byCategory, symptomsOf("SURGICAL"))} labelOf={symptomLabel} />
       </div>
     </>
   );
+}
+
+/** 只取某科別的症狀統計 */
+function pick(counts: Record<string, number>, symptoms: readonly { value: string }[]) {
+  return Object.fromEntries(symptoms.filter((s) => counts[s.value]).map((s) => [s.value, counts[s.value]]));
 }

@@ -165,7 +165,13 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送警告並匯出 CS
   await choose(reporter, "sex", "女");
   await reporter.getByLabel("年齡", { exact: true }).fill("70");
   await expect(reporter.getByText("已依年齡自動判斷：長者(65+)")).toBeVisible();
-  await choose(reporter, "category", "熱傷害（中暑/熱衰竭）");
+  // 先選科別才出現症狀；切換科別會清空症狀
+  await expect(reporter.locator("[role=radiogroup]#category")).toHaveCount(0);
+  await choose(reporter, "department", "外科");
+  await choose(reporter, "category", "扭傷／拉傷");
+  await choose(reporter, "department", "內科");
+  await expect(reporter.getByText("扭傷／拉傷")).toHaveCount(0);
+  await choose(reporter, "category", "熱傷害（中暑／熱衰竭／熱痙攣）");
   await reporter.getByLabel("主訴／症狀描述").fill("E2E測試：意識不清");
   await reporter.getByRole("button", { name: "送出登記" }).click();
 
@@ -184,7 +190,8 @@ test("站點登記傷患 → 指揮中心看到紀錄、後送警告並匯出 CS
   const body = await csv.text();
   expect(body.charCodeAt(0)).toBe(0xfeff);
   expect(body).toContain("E2E測試：意識不清");
-  expect(body).toContain("民眾,,測試王小明,女,70,長者(65+)");
+  expect(body).toContain("民眾,,測試王小明,女,70,長者(65+),內科,熱傷害（中暑／熱衰竭／熱痙攣）");
+  await expect(command.getByRole("cell", { name: "內科・熱傷害" }).first()).toBeVisible();
 
   // 改為後送 → 指揮中心出現後送警告
   await reporter.getByText("E2E測試：意識不清").click();
@@ -211,9 +218,10 @@ test("國軍官兵在姓名左邊選擇階級", async ({ browser }) => {
   await reporter.getByLabel("姓名").fill("測試陳大華");
   await choose(reporter, "sex", "男");
   await choose(reporter, "ageGroup", "成人(18-64)");
-  await choose(reporter, "category", "扭傷");
+  await choose(reporter, "department", "外科");
+  await choose(reporter, "category", "扭傷／拉傷");
   await reporter.getByRole("button", { name: "送出登記" }).click();
-  await expect(reporter.getByText("上士 測試陳大華・扭傷")).toBeVisible();
+  await expect(reporter.getByText("上士 測試陳大華・外科・扭傷")).toBeVisible();
 
   const command = await browser.newPage();
   await enterCommand(command);
@@ -229,9 +237,10 @@ test("刪除傷患紀錄（需確認）", async ({ browser }) => {
   await reporter.getByLabel("姓名").fill("待刪除測試");
   await choose(reporter, "sex", "男");
   await choose(reporter, "ageGroup", "成人(18-64)");
-  await choose(reporter, "category", "其他");
+  await choose(reporter, "department", "外科");
+  await choose(reporter, "category", "其他外科");
   await reporter.getByRole("button", { name: "送出登記" }).click();
-  await reporter.getByText("待刪除測試・其他").click();
+  await reporter.getByText("待刪除測試・外科・其他外科").click();
 
   // 取消確認 → 不刪除
   reporter.once("dialog", (d) => d.dismiss());
@@ -242,7 +251,7 @@ test("刪除傷患紀錄（需確認）", async ({ browser }) => {
   reporter.once("dialog", (d) => d.accept());
   await reporter.getByRole("button", { name: "刪除此筆紀錄" }).click();
   await expect(reporter.getByText("✓ 紀錄已刪除")).toBeVisible();
-  await expect(reporter.getByText("待刪除測試・其他")).toHaveCount(0);
+  await expect(reporter.getByText("待刪除測試・外科・其他外科")).toHaveCount(0);
 
   const command = await browser.newPage();
   await enterCommand(command);
@@ -338,4 +347,8 @@ test("成果報告頁顯示統計", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "醫療救護成果報告" })).toBeVisible();
   await expect(page.getByText(/本場次共設置救護站/)).toBeVisible();
   await expect(page.getByRole("cell", { name: "合計" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "傷病類別（內外科）" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "內科 小計" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "外科 小計" })).toBeVisible();
+  await expect(page.getByText(/依科別分，內科 \d+ 人/)).toBeVisible();
 });

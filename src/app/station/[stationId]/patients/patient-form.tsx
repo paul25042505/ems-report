@@ -4,7 +4,18 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { savePatient } from "../actions";
 import { ActionForm, ChoiceGroup, Field, FormMessage, SubmitButton } from "@/components/forms";
-import { AGE_GROUPS, CATEGORIES, DISPOSITIONS, MILITARY_RANKS, PATIENT_TYPES, SEXES, ageGroupLabel, ageGroupOf } from "@/lib/constants";
+import {
+  AGE_GROUPS,
+  DEPARTMENTS,
+  DISPOSITIONS,
+  MILITARY_RANKS,
+  PATIENT_TYPES,
+  SEXES,
+  ageGroupLabel,
+  ageGroupOf,
+  departmentOf,
+  symptomsOf,
+} from "@/lib/constants";
 
 export type PatientDefaults = {
   arrivedAt: string;
@@ -36,6 +47,8 @@ export function PatientForm({
   const [state, action, pending] = useActionState(savePatient.bind(null, stationId, patientId), {});
   const [disposition, setDisposition] = useState(defaults.disposition ?? "OBSERVING");
   const [patientType, setPatientType] = useState(defaults.patientType ?? "");
+  const initialDept = defaults.category ? departmentOf(defaults.category) : "";
+  const [department, setDepartment] = useState(initialDept === "UNKNOWN" ? "" : initialDept);
   const [age, setAge] = useState(defaults.age == null ? "" : String(defaults.age));
   const ageNumber = age.trim() === "" ? null : Number(age);
   const autoAgeGroup = ageNumber !== null && Number.isInteger(ageNumber) && ageNumber >= 0 && ageNumber <= 120 ? ageGroupOf(ageNumber) : null;
@@ -48,6 +61,7 @@ export function PatientForm({
           const t = e.target as HTMLInputElement;
           if (t.name === "disposition") setDisposition(t.value);
           if (t.name === "patientType") setPatientType(t.value);
+          if (t.name === "department") setDepartment(t.value);
         }}
       >
         <FormMessage state={state} />
@@ -107,9 +121,22 @@ export function PatientForm({
           )}
         </Field>
 
-        <Field label="傷病類別" name="category" state={state}>
-          <ChoiceGroup name="category" options={CATEGORIES} defaultValue={defaults.category} columns={2} />
+        <Field label="科別" name="department" state={state}>
+          <ChoiceGroup name="department" options={DEPARTMENTS} defaultValue={department || undefined} columns={2} />
         </Field>
+
+        {department && (
+          <Field label={`${department === "MEDICAL" ? "內科" : "外科"}症狀`} name="category" state={state} hint="選「其他」請在主訴欄填寫細節">
+            {/* key 隨科別變動：切換科別時清空已選的症狀 */}
+            <ChoiceGroup
+              key={department}
+              name="category"
+              options={symptomsOf(department)}
+              defaultValue={defaults.category && departmentOf(defaults.category) === department ? defaults.category : undefined}
+              columns={2}
+            />
+          </Field>
+        )}
 
         <Field label="主訴／症狀描述" name="complaint" state={state}>
           <textarea id="complaint" name="complaint" className="input" rows={2} maxLength={500} defaultValue={defaults.complaint} />

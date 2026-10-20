@@ -86,6 +86,15 @@ describe("傷患表單驗證", () => {
     expect(!bad.success && bad.state.fieldErrors?.rank).toBe("請選擇階級");
   });
 
+  it("症狀必須是內外科清單中的值（舊的「其他」不再接受）", () => {
+    expect(parseForm(patientSchema, fd({ ...basePatient, category: "FRACTURE" })).success).toBe(true);
+    const legacy = parseForm(patientSchema, fd({ ...basePatient, category: "OTHER" }));
+    expect(!legacy.success && legacy.state.fieldErrors?.category).toBe("請選擇內科或外科的症狀");
+    const rest: Record<string, string> = { ...basePatient, department: "MEDICAL" };
+    delete rest.category;
+    expect(parseForm(patientSchema, fd(rest)).success).toBe(false);
+  });
+
   it("後送必須填醫院", () => {
     const r = parseForm(patientSchema, fd({ ...basePatient, disposition: "TRANSFERRED" }));
     expect(r.success).toBe(false);

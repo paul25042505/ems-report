@@ -7,6 +7,7 @@ import {
   listStations,
   listSuppliesByEvent,
 } from "./repo";
+import { departmentOf } from "./constants";
 import { computeAlerts, countBy, hourlyCounts, totals } from "./summary";
 
 export { getActiveEvent };
@@ -48,6 +49,7 @@ export async function getEventDashboard(eventId: string, now = new Date()) {
     }),
     totals: totals(patients),
     pendingRequests: requests.filter((r) => r.status === "PENDING").length,
+    byDepartment: countBy(patients, (p) => departmentOf(p.category)),
     byCategory: countBy(patients, (p) => p.category),
     byDisposition: countBy(patients, (p) => p.disposition),
     byPatientType: countBy(patients, (p) => p.patientType),

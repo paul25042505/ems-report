@@ -2,10 +2,11 @@ import { listStations } from "@/lib/repo";
 import { resolveEvent } from "@/lib/dashboard";
 import { findPatients, type PatientFilter } from "@/lib/patient-query";
 import {
-  CATEGORIES,
+  DEPARTMENTS,
+  SYMPTOMS,
   DISPOSITIONS,
   ageGroupLabel,
-  categoryLabel,
+  categoryText,
   displayName,
   patientTypeLabel,
   sexLabel,
@@ -43,7 +44,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
         </div>
       </div>
 
-      <form className="card grid grid-cols-2 gap-3 md:grid-cols-4" method="get">
+      <form className="card grid grid-cols-2 gap-3 md:grid-cols-5" method="get">
         <input type="hidden" name="event" value={event.id} />
         <select name="station" defaultValue={filter.station ?? ""} className="input" aria-label="站點">
           <option value="">全部站點</option>
@@ -53,12 +54,24 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
             </option>
           ))}
         </select>
-        <select name="category" defaultValue={filter.category ?? ""} className="input" aria-label="傷病類別">
-          <option value="">全部類別</option>
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
+        <select name="department" defaultValue={filter.department ?? ""} className="input" aria-label="科別">
+          <option value="">全部科別</option>
+          {DEPARTMENTS.map((d) => (
+            <option key={d.value} value={d.value}>
+              {d.label}
             </option>
+          ))}
+        </select>
+        <select name="category" defaultValue={filter.category ?? ""} className="input" aria-label="症狀">
+          <option value="">全部症狀</option>
+          {DEPARTMENTS.map((d) => (
+            <optgroup key={d.value} label={d.label}>
+              {SYMPTOMS.filter((s) => s.dept === d.value).map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <select name="disposition" defaultValue={filter.disposition ?? ""} className="input" aria-label="去向">
@@ -79,7 +92,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
               <th>到站</th>
               <th>站點</th>
               <th>姓名</th>
-              <th>類別</th>
+              <th>傷病</th>
               <th>身分／性別／年齡</th>
               <th>主訴</th>
               <th>處置</th>
@@ -99,7 +112,7 @@ export default async function CommandPatientsPage({ searchParams }: { searchPara
                 <td className="whitespace-nowrap tabular-nums">{formatDateTime(p.arrivedAt)}</td>
                 <td className="whitespace-nowrap">{p.station.name}</td>
                 <td className="whitespace-nowrap">{displayName(p) || "—"}</td>
-                <td className="whitespace-nowrap">{categoryLabel(p.category)}</td>
+                <td className="whitespace-nowrap">{categoryText(p.category)}</td>
                 <td className="whitespace-nowrap">
                   {patientTypeLabel(p.patientType)}／{sexLabel(p.sex)}／{p.age != null ? `${p.age} 歲` : ageGroupLabel(p.ageGroup)}
                 </td>

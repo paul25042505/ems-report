@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   AGE_GROUPS,
-  CATEGORIES,
   DISPOSITIONS,
   PATIENT_TYPES,
   REQUEST_STATUS,
@@ -9,7 +8,9 @@ import {
   SEXES,
   MILITARY_RANKS,
   STATION_STATUS,
+  SYMPTOMS,
   ageGroupOf,
+  type Symptom,
 } from "./constants";
 import { parseLocalInput } from "./time";
 
@@ -66,7 +67,8 @@ export const patientSchema = z
     ),
     // 有填實際年齡時由年齡自動判斷，沒填才需要快速選擇
     ageGroup: pick(AGE_GROUPS).optional(),
-    category: pick(CATEGORIES),
+    // 傷病症狀（科別由症狀決定）
+    category: z.enum(SYMPTOMS.map((s) => s.value) as [Symptom, ...Symptom[]], { error: "請選擇內科或外科的症狀" }),
     complaint: text(500),
     treatment: text(500),
     disposition: pick(DISPOSITIONS),

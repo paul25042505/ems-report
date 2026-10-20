@@ -73,18 +73,54 @@ export function ageGroupOf(age: number): (typeof AGE_GROUPS)[number]["value"] {
   return "SENIOR";
 }
 
-export const CATEGORIES = [
-  { value: "HEAT", label: "熱傷害（中暑/熱衰竭）" },
-  { value: "DIZZY", label: "頭暈/暈眩" },
-  { value: "ABRASION", label: "擦挫傷" },
-  { value: "SPRAIN", label: "扭傷" },
-  { value: "CUT", label: "割傷/撕裂傷" },
-  { value: "INSECT", label: "蚊蟲叮咬" },
-  { value: "GI", label: "腸胃不適" },
-  { value: "ALLERGY", label: "過敏" },
-  { value: "OTHER", label: "其他" },
+/** 傷病科別 */
+export const DEPARTMENTS = [
+  { value: "MEDICAL", label: "內科" },
+  { value: "SURGICAL", label: "外科" },
 ] as const satisfies readonly Option<string>[];
-export const categoryLabel = (v: string) => labelOf(CATEGORIES, v);
+export type Department = (typeof DEPARTMENTS)[number]["value"];
+
+/**
+ * 症狀（傷患資料的 category 欄位存症狀代碼）。label 用於按鈕與統計，short 用於列表。
+ * 舊資料的代碼（HEAT、DIZZY、GI、ALLERGY、ABRASION、SPRAIN、CUT、INSECT）沿用，自動歸入對應科別。
+ */
+export const SYMPTOMS = [
+  { value: "HEAT", dept: "MEDICAL", label: "熱傷害（中暑／熱衰竭／熱痙攣）", short: "熱傷害" },
+  { value: "DIZZY", dept: "MEDICAL", label: "頭暈／暈眩", short: "頭暈" },
+  { value: "SYNCOPE", dept: "MEDICAL", label: "昏厥／意識改變", short: "昏厥" },
+  { value: "HEADACHE", dept: "MEDICAL", label: "頭痛", short: "頭痛" },
+  { value: "CHEST", dept: "MEDICAL", label: "胸痛／胸悶", short: "胸痛" },
+  { value: "PALPITATION", dept: "MEDICAL", label: "心悸／血壓異常", short: "心悸／血壓" },
+  { value: "DYSPNEA", dept: "MEDICAL", label: "呼吸困難／氣喘", short: "呼吸困難" },
+  { value: "GI", dept: "MEDICAL", label: "腸胃不適（噁心、嘔吐、腹痛、腹瀉）", short: "腸胃不適" },
+  { value: "ALLERGY", dept: "MEDICAL", label: "過敏（皮疹、蕁麻疹）", short: "過敏" },
+  { value: "HYPOGLYCEMIA", dept: "MEDICAL", label: "低血糖", short: "低血糖" },
+  { value: "SEIZURE", dept: "MEDICAL", label: "抽搐／癲癇", short: "抽搐" },
+  { value: "FEVER", dept: "MEDICAL", label: "發燒／感冒症狀", short: "發燒" },
+  { value: "MED_OTHER", dept: "MEDICAL", label: "其他內科", short: "其他內科" },
+  { value: "ABRASION", dept: "SURGICAL", label: "擦傷／挫傷", short: "擦挫傷" },
+  { value: "CUT", dept: "SURGICAL", label: "割傷／撕裂傷", short: "割傷" },
+  { value: "SPRAIN", dept: "SURGICAL", label: "扭傷／拉傷", short: "扭傷" },
+  { value: "FRACTURE", dept: "SURGICAL", label: "疑似骨折／脫臼", short: "骨折／脫臼" },
+  { value: "HEAD_INJURY", dept: "SURGICAL", label: "頭部外傷", short: "頭部外傷" },
+  { value: "BURN", dept: "SURGICAL", label: "燒燙傷", short: "燒燙傷" },
+  { value: "INSECT", dept: "SURGICAL", label: "蚊蟲叮咬／動物咬傷", short: "叮咬" },
+  { value: "EYE", dept: "SURGICAL", label: "眼睛異物／眼睛受傷", short: "眼睛受傷" },
+  { value: "EPISTAXIS", dept: "SURGICAL", label: "流鼻血", short: "流鼻血" },
+  { value: "BLISTER", dept: "SURGICAL", label: "水泡", short: "水泡" },
+  { value: "SURG_OTHER", dept: "SURGICAL", label: "其他外科", short: "其他外科" },
+] as const;
+export type Symptom = (typeof SYMPTOMS)[number]["value"];
+
+const symptomOf = (v: string) => SYMPTOMS.find((s) => s.value === v);
+/** 症狀所屬科別；舊資料的「其他」沒有科別，回傳 UNKNOWN */
+export const departmentOf = (symptom: string): Department | "UNKNOWN" => symptomOf(symptom)?.dept ?? "UNKNOWN";
+export const departmentLabel = (v: string) => (v === "UNKNOWN" ? "未分科" : labelOf(DEPARTMENTS, v));
+export const symptomLabel = (v: string) => symptomOf(v)?.label ?? (v === "OTHER" ? "其他" : v);
+export const symptomShort = (v: string) => symptomOf(v)?.short ?? (v === "OTHER" ? "其他" : v);
+/** 列表用：「內科・熱傷害」 */
+export const categoryText = (v: string) => `${departmentLabel(departmentOf(v))}・${symptomShort(v)}`;
+export const symptomsOf = (dept: string) => SYMPTOMS.filter((s) => s.dept === dept);
 
 export const DISPOSITIONS = [
   { value: "OBSERVING", label: "留站觀察中" },

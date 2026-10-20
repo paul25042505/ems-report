@@ -5,7 +5,9 @@ import { resolveEvent } from "@/lib/dashboard";
 import { findPatients, type PatientFilter } from "@/lib/patient-query";
 import {
   ageGroupLabel,
-  categoryLabel,
+  departmentLabel,
+  departmentOf,
+  symptomLabel,
   dispositionLabel,
   patientTypeLabel,
   sexLabel,
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const patients = await findPatients(event.id, filter);
   const rows: unknown[][] = [
-    ["到站時間", "站點", "身分", "階級", "姓名", "性別", "年齡", "年齡層", "傷病類別", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
+    ["到站時間", "站點", "身分", "階級", "姓名", "性別", "年齡", "年齡層", "科別", "症狀", "主訴", "處置", "去向", "後送醫院", "救護車", "離站時間", "備註"],
     ...patients.map((p) => [
       formatDateTime(p.arrivedAt),
       p.station.name,
@@ -30,7 +32,8 @@ export async function GET(req: NextRequest) {
       sexLabel(p.sex),
       p.age ?? "",
       ageGroupLabel(p.ageGroup),
-      categoryLabel(p.category),
+      departmentLabel(departmentOf(p.category)),
+      symptomLabel(p.category),
       p.complaint,
       p.treatment,
       dispositionLabel(p.disposition),

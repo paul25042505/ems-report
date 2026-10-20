@@ -1,10 +1,12 @@
 import "server-only";
+import { departmentOf } from "./constants";
 import { listPatientsByEvent, listStations } from "./repo";
 
 export type PatientFilter = {
   event?: string;
   station?: string;
   disposition?: string;
+  department?: string;
   category?: string;
 };
 
@@ -17,6 +19,7 @@ export async function findPatients(eventId: string, f: PatientFilter) {
       (p) =>
         (!f.station || p.stationId === f.station) &&
         (!f.disposition || p.disposition === f.disposition) &&
+        (!f.department || departmentOf(p.category) === f.department) &&
         (!f.category || p.category === f.category),
     )
     .map((p) => ({ ...p, station: { name: names.get(p.stationId) ?? "" } }));

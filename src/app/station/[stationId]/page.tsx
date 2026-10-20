@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listPatientsByStation } from "@/lib/repo";
 import { getStationContext } from "@/lib/context";
-import { STATION_STATUS, categoryLabel, displayName } from "@/lib/constants";
+import { STATION_STATUS, categoryText, displayName } from "@/lib/constants";
 import { totals } from "@/lib/summary";
 import { formatAgo, formatTime, startOfLocalDay } from "@/lib/time";
 import { DispositionBadge, StationStatusBadge } from "@/components/badges";
@@ -101,7 +101,7 @@ function PatientList({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">
                     {displayName(p) && `${displayName(p)}・`}
-                    {categoryLabel(p.category)}
+                    {categoryText(p.category)}
                   </span>
                   <span className="block truncate text-xs text-slate-500">
                     {p.disposition === "TRANSFERRED" ? `→ ${p.hospital}` : p.complaint}
