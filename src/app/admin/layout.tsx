@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AppHeader, COMMAND_NAV } from "@/components/app-header";
+import { listPendingAccountRequests } from "@/lib/repo";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pending = (await listPendingAccountRequests()).length;
   return (
     <>
       <AppHeader subtitle="系統管理" nav={COMMAND_NAV} />
@@ -12,6 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/users" className="btn-secondary btn-sm">
             登入名單
+            {pending > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">{pending}</span>}
           </Link>
           <Link href="/admin/audit" className="btn-secondary btn-sm">
             操作紀錄

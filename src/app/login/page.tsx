@@ -11,7 +11,7 @@ export default function LoginPage() {
         </div>
         <div className="card space-y-3">
           <GoogleLoginButton />
-          <p className="text-center text-xs text-slate-500">僅限登入名單上的帳號使用</p>
+          <p className="text-center text-xs text-slate-500">第一次使用請先登入，再填寫申請資料，經管理員核准後即可使用</p>
         </div>
       </div>
     </main>

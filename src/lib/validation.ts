@@ -162,6 +162,14 @@ function rolesFrom(command: boolean, station: boolean) {
   return [...(command ? ["COMMAND"] : []), ...(station ? ["STATION"] : [])];
 }
 
+export const accountRequestSchema = z.object({
+  unit: required(50, "請輸入單位"),
+  rank: required(30, "請輸入級職"),
+  name: required(30, "請輸入姓名"),
+});
+
+export const approveRequestSchema = memberRolesSchema;
+
 export type ActionState = {
   ok?: boolean;
   message?: string;

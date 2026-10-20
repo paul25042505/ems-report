@@ -29,14 +29,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "登入驗證失敗，請重新登入" }, { status: 401 });
   }
 
-  if (!email || !(await rolesOf(email))) {
-    return NextResponse.json({ error: `${email ?? "此帳號"} 沒有使用權限，請聯絡管理員加入登入名單` }, { status: 403 });
-  }
+  if (!email) return NextResponse.json({ error: "此 Google 帳號沒有 Email" }, { status: 403 });
 
+  // 不在登入名單上的人也發 session，但只能進入申請帳號頁（由 middleware 控管）
+  const approved = (await rolesOf(email)) !== null;
   const session = await adminAuth().createSessionCookie(idToken, { expiresIn: SESSION_MS });
-  await addAuditLog({ actor: name ? `${name}（${email}）` : email, role: "LOGIN", action: "登入", entity: "Session", entityId: "", detail: "" });
+  await addAuditLog({
+    actor: name ? `${name}（${email}）` : email,
+    role: "LOGIN",
+    action: approved ? "登入" : "登入（尚未核准）",
+    entity: "Session",
+    entityId: "",
+    detail: "",
+  });
 
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true, approved });
   res.cookies.set(SESSION_COOKIE, session, { ...cookieOptions, maxAge: SESSION_MS / 1000 });
   return res;
 }

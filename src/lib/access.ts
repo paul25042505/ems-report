@@ -25,8 +25,9 @@ export function requiredRole(pathname: string): MemberRole | null {
   return PATH_ROLES.find((r) => pathname === r.prefix || pathname.startsWith(r.prefix + "/"))?.role ?? null;
 }
 
-// 名單查詢結果快取 60 秒，避免每個請求都讀 Firestore；移出名單或改角色後最多 1 分鐘生效
-const cache = new Map<string, { roles: MemberRole[] | null; at: number }>();
+// 名單查詢結果快取 60 秒，避免每個請求都讀 Firestore；移出名單或改角色後最多 1 分鐘生效。
+// 不在名單上的結果不快取，申請核准後馬上就能使用。
+const cache = new Map<string, { roles: MemberRole[]; at: number }>();
 const CACHE_MS = 60_000;
 
 /** 取得帳號的角色；不在名單上回傳 null */
@@ -36,7 +37,8 @@ export async function rolesOf(email: string): Promise<MemberRole[] | null> {
   const hit = cache.get(id);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.roles;
   const stored = await getAllowedRoles(id);
-  const roles = stored === null ? null : ALL_ROLES.filter((r) => stored.includes(r));
+  if (stored === null) return null;
+  const roles = ALL_ROLES.filter((r) => stored.includes(r));
   cache.set(id, { roles, at: Date.now() });
   return roles;
 }
@@ -45,16 +47,16 @@ export function forgetAllowed(email: string) {
   cache.delete(emailId(email));
 }
 
-export type SessionUser = { email: string; name: string; roles: MemberRole[] };
+/** roles 為 null 表示已用 Google 登入，但還不在登入名單上（只能進入申請帳號頁） */
+export type SessionUser = { email: string; name: string; roles: MemberRole[] | null };
 
-/** 驗證 session cookie，並確認帳號仍在名單上 */
+/** 驗證 session cookie，並查出帳號在名單上的角色 */
 export async function verifySession(cookie: string | undefined): Promise<SessionUser | null> {
   if (!cookie) return null;
   try {
     const claims = await adminAuth().verifySessionCookie(cookie);
     if (!claims.email) return null;
     const roles = await rolesOf(claims.email);
-    if (!roles) return null;
     return { email: emailId(claims.email), name: (claims.name as string | undefined) ?? claims.email, roles };
   } catch {
     return null;

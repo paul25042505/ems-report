@@ -107,6 +107,7 @@ const col = {
   requests: firestore.collection("requests"),
   auditLogs: firestore.collection("auditLogs"),
   allowedUsers: firestore.collection("allowedUsers"),
+  accountRequests: firestore.collection("accountRequests"),
 };
 
 /** Firestore 的 Timestamp 轉回 Date */
@@ -357,4 +358,39 @@ export async function setAllowedUserRoles(email: string, roles: string[]) {
 
 export async function removeAllowedUser(email: string) {
   await col.allowedUsers.doc(emailId(email)).delete();
+}
+
+// ── 帳號申請 ──────────────────────────────────────────────
+
+/** 不在登入名單上的人以 Google 登入後提出的申請；文件 id 為小寫 email */
+export type AccountRequest = {
+  id: string;
+  email: string;
+  unit: string;
+  rank: string;
+  name: string;
+  /** PENDING | APPROVED | REJECTED */
+  status: string;
+  reviewedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export async function getAccountRequest(email: string) {
+  return fromDoc<AccountRequest>(await col.accountRequests.doc(emailId(email)).get());
+}
+
+export async function listPendingAccountRequests() {
+  return (await all<AccountRequest>(col.accountRequests.where("status", "==", "PENDING"))).sort(byAsc((r) => r.createdAt));
+}
+
+/** 送出或重新送出申請（狀態回到待審核） */
+export async function submitAccountRequest(email: string, data: { unit: string; rank: string; name: string }) {
+  const id = emailId(email);
+  const now = new Date();
+  await col.accountRequests.doc(id).set({ ...data, email: id, status: "PENDING", reviewedBy: "", createdAt: now, updatedAt: now });
+}
+
+export async function reviewAccountRequest(email: string, status: "APPROVED" | "REJECTED", reviewedBy: string) {
+  await col.accountRequests.doc(emailId(email)).update({ status, reviewedBy, updatedAt: new Date() });
 }

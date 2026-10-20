@@ -26,10 +26,12 @@ test("LINE 內建瀏覽器自動改用外部瀏覽器；其他 App 內建瀏覽�
 });
 
 test("不在名單上的帳號無法登入；加入名單後可以登入，移出後失效", async ({ browser }) => {
+  // 不在名單上：登入後只能進申請帳號頁
   const outsider = await browser.newPage();
-  expect(await login(outsider, "outsider@example.com")).toBe(403);
-  await outsider.goto("/");
-  await expect(outsider).toHaveURL(/\/login$/);
+  expect(await login(outsider, "outsider@example.com")).toBe(200);
+  await outsider.goto("/command");
+  await expect(outsider).toHaveURL(/\/apply$/);
+  expect((await outsider.request.get("/api/export/patients")).status()).toBe(403);
 
   const owner = await browser.newPage();
   await enterCommand(owner);
@@ -86,6 +88,50 @@ test("不在名單上的帳號無法登入；加入名單後可以登入，移�
 
   await owner.locator("li", { hasText: "medic@example.com" }).getByRole("button", { name: "移出" }).click();
   await expect(owner.locator("li", { hasText: "medic@example.com" })).toHaveCount(0);
+});
+
+test("申請帳號 → 後台核准後可以使用；拒絕後可重新申請", async ({ browser }) => {
+  const applicant = await browser.newPage();
+  expect(await login(applicant, "newbie@example.com")).toBe(200);
+  await applicant.goto("/");
+  await expect(applicant).toHaveURL(/\/apply$/);
+  await applicant.getByLabel("單位").fill("國軍測試醫院");
+  await applicant.getByLabel("級職").fill("上士／醫務士");
+  await applicant.getByLabel("姓名").fill("張申請");
+  await applicant.getByRole("button", { name: "送出申請" }).click();
+  await expect(applicant.getByRole("heading", { name: "審核中" })).toBeVisible();
+
+  const rejectee = await browser.newPage();
+  await login(rejectee, "reject@example.com");
+  await rejectee.goto("/apply");
+  await rejectee.getByLabel("單位").fill("某單位");
+  await rejectee.getByLabel("級職").fill("下士");
+  await rejectee.getByLabel("姓名").fill("李拒絕");
+  await rejectee.getByRole("button", { name: "送出申請" }).click();
+  await expect(rejectee.getByRole("heading", { name: "審核中" })).toBeVisible();
+
+  const owner = await browser.newPage();
+  await enterCommand(owner);
+  await owner.goto("/admin/users");
+  await expect(owner.getByRole("heading", { name: "帳號申請（待審核 2）" })).toBeVisible();
+  const req = owner.locator("li", { hasText: "newbie@example.com" });
+  await expect(req.getByText("國軍測試醫院　上士／醫務士　張申請")).toBeVisible();
+  await req.getByRole("button", { name: "核准" }).click(); // 預設站點人員
+  await expect(owner.getByRole("heading", { name: "帳號申請（待審核 1）" })).toBeVisible();
+  await expect(owner.getByText("國軍測試醫院 上士／醫務士 張申請")).toBeVisible(); // 已加入名單，備註帶入資料
+  await owner.locator("li", { hasText: "reject@example.com" }).getByRole("button", { name: "拒絕" }).click();
+  await expect(owner.getByRole("heading", { name: "帳號申請（待審核 0）" })).toBeVisible();
+
+  // 核准：重新整理即可使用站點，但沒有指揮中心權限
+  await applicant.goto("/");
+  await expect(applicant.getByRole("link", { name: "站點人員" })).toBeVisible();
+  await applicant.goto("/command");
+  await expect(applicant.getByRole("heading", { name: "您沒有指揮中心的權限" })).toBeVisible();
+
+  // 拒絕：看到未通過，可以重新申請
+  await rejectee.reload();
+  await expect(rejectee.getByText("上次的申請未通過")).toBeVisible();
+  await expect(rejectee.getByLabel("姓名")).toHaveValue("李拒絕");
 });
 
 test("登出後回到登入頁", async ({ page }) => {

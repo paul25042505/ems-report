@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { addAllowedUser, createEvent, createStation, setMemberRoles, updateEvent, updateStation } from "./actions";
+import { addAllowedUser, approveAccountRequest, createEvent, createStation, setMemberRoles, updateEvent, updateStation } from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { MEMBER_ROLES, STATION_STATUS } from "@/lib/constants";
 
@@ -142,6 +142,20 @@ export function MemberRolesForm({ email, roles }: { email: string; roles: string
       {(state.error || state.message) && (
         <span className={`text-xs font-semibold ${state.error ? "text-red-700" : "text-green-700"}`}>{state.error ?? state.message}</span>
       )}
+    </ActionForm>
+  );
+}
+
+/** 帳號申請：勾選角色後核准 */
+export function ApproveRequestForm({ email }: { email: string }) {
+  const [state, action, pending] = useActionState(approveAccountRequest.bind(null, email), {});
+  return (
+    <ActionForm action={action} className="flex flex-wrap items-center gap-2">
+      <RoleCheckboxes idPrefix={`req-${email}`} defaults={["STATION"]} />
+      <SubmitButton className="btn-dark btn-sm" pending={pending}>
+        核准
+      </SubmitButton>
+      {state.error && <span className="text-xs font-semibold text-red-700">{state.error}</span>}
     </ActionForm>
   );
 }

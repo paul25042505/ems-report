@@ -1,19 +1,46 @@
-import { listAllowedUsers, rolesOfMember } from "@/lib/repo";
+import { listAllowedUsers, listPendingAccountRequests, rolesOfMember } from "@/lib/repo";
 import { ownerEmails } from "@/lib/access";
 import { currentUser } from "@/lib/context";
 import { formatDateTime } from "@/lib/time";
 import { memberRoleLabel } from "@/lib/constants";
-import { removeAllowedUser } from "../actions";
-import { AllowedUserForm, MemberRolesForm } from "../admin-forms";
+import { rejectAccountRequest, removeAllowedUser } from "../actions";
+import { AllowedUserForm, ApproveRequestForm, MemberRolesForm } from "../admin-forms";
 
 export const dynamic = "force-dynamic";
 
 export default async function AllowedUsersPage() {
-  const [users, me] = await Promise.all([listAllowedUsers(), currentUser()]);
+  const [users, me, requests] = await Promise.all([listAllowedUsers(), currentUser(), listPendingAccountRequests()]);
   const owners = ownerEmails();
 
   return (
     <>
+      <section className={`card ${requests.length ? "ring-2 ring-amber-400" : ""}`}>
+        <h2 className="mb-1">帳號申請（待審核 {requests.length}）</h2>
+        {requests.length === 0 ? (
+          <p className="text-sm text-slate-500">目前沒有待審核的申請</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {requests.map((r) => (
+              <li key={r.id} className="space-y-2 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block font-semibold">
+                      {r.unit}　{r.rank}　{r.name}
+                    </span>
+                    <span className="block truncate font-mono text-xs text-slate-500">{r.email}</span>
+                    <span className="block text-xs text-slate-500">申請於 {formatDateTime(r.updatedAt)}</span>
+                  </span>
+                  <form action={rejectAccountRequest.bind(null, r.email)}>
+                    <button className="btn-secondary btn-sm">拒絕</button>
+                  </form>
+                </div>
+                <ApproveRequestForm email={r.email} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section className="card">
         <h1 className="mb-1">登入名單</h1>
         <p className="mb-3 text-sm text-slate-600">

@@ -44,7 +44,8 @@ export function GoogleLoginButton() {
         setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "登入失敗");
         return;
       }
-      router.replace("/");
+      const { approved } = (await res.json()) as { approved?: boolean };
+      router.replace(approved ? "/" : "/apply");
       router.refresh();
     } catch (e) {
       const code = (e as { code?: string }).code;

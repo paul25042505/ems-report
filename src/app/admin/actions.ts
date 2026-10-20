@@ -10,6 +10,7 @@ import { DEFAULT_SUPPLIES, memberRoleLabel } from "@/lib/constants";
 import {
   allowedUserSchema,
   eventSchema,
+  approveRequestSchema,
   memberRolesSchema,
   parseForm,
   stationSchema,
@@ -105,4 +106,27 @@ export async function setMemberRoles(email: string, _prev: ActionState, formData
   await audit(await commandActor(), "變更成員角色", "AllowedUser", email, { roles: parsed.data });
   revalidatePath("/admin/users");
   return { ok: true, message: "已儲存" };
+}
+
+/** 核准帳號申請：加入登入名單（備註填入單位、級職、姓名） */
+export async function approveAccountRequest(email: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const request = await repo.getAccountRequest(email);
+  if (!request || request.status !== "PENDING") return { error: "找不到這筆申請" };
+  const parsed = parseForm(approveRequestSchema, formData);
+  if (!parsed.success) return { error: parsed.state.fieldErrors?.roles ?? "請至少勾選一個角色" };
+  const reviewer = await currentUser();
+  await repo.addAllowedUser(request.email, `${request.unit} ${request.rank} ${request.name}`, parsed.data);
+  await repo.reviewAccountRequest(request.email, "APPROVED", reviewer.email);
+  forgetAllowed(request.email);
+  await audit(await commandActor(), "核准帳號申請", "AccountRequest", request.email, { ...request, roles: parsed.data });
+  revalidatePath("/admin/users");
+  return { ok: true, message: "已核准" };
+}
+
+export async function rejectAccountRequest(email: string) {
+  const request = await repo.getAccountRequest(email);
+  if (!request || request.status !== "PENDING") return;
+  await repo.reviewAccountRequest(request.email, "REJECTED", (await currentUser()).email);
+  await audit(await commandActor(), "拒絕帳號申請", "AccountRequest", request.email, request);
+  revalidatePath("/admin/users");
 }
