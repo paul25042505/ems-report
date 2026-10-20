@@ -2,7 +2,7 @@ import Link from "next/link";
 import { countPatients, countStations, listEvents, listStations } from "@/lib/repo";
 import { toLocalDateInput } from "@/lib/time";
 import { StationStatusBadge } from "@/components/badges";
-import { activateEvent } from "./actions";
+import { activateEvent, moveStation } from "./actions";
 import { EventForm, StationForm } from "./admin-forms";
 
 export const dynamic = "force-dynamic";
@@ -74,6 +74,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <table className="table">
               <thead>
                 <tr>
+                  <th className="w-20">順序</th>
                   <th>站名</th>
                   <th>位置</th>
                   <th>狀態</th>
@@ -85,13 +86,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               <tbody>
                 {stations.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center text-slate-500">
+                    <td colSpan={7} className="text-center text-slate-500">
                       尚未設定救護站
                     </td>
                   </tr>
                 )}
-                {stations.map((s) => (
+                {stations.map((s, i) => (
                   <tr key={s.id}>
+                    <td className="whitespace-nowrap">
+                      <form action={moveStation.bind(null, s.id, "up")} className="inline">
+                        <button className="btn-secondary btn-sm w-8 px-0" disabled={i === 0} aria-label={`${s.name} 上移`}>
+                          ↑
+                        </button>
+                      </form>{" "}
+                      <form action={moveStation.bind(null, s.id, "down")} className="inline">
+                        <button className="btn-secondary btn-sm w-8 px-0" disabled={i === stations.length - 1} aria-label={`${s.name} 下移`}>
+                          ↓
+                        </button>
+                      </form>
+                    </td>
                     <td className="font-semibold">{s.name}</td>
                     <td>{s.location}</td>
                     <td>

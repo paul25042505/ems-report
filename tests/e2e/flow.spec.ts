@@ -264,11 +264,26 @@ test("系統管理新增救護站 → 站點清單出現並可進入", async ({ 
   await page.getByLabel("位置描述").fill("測試位置");
   await page.getByRole("button", { name: "新增救護站" }).click();
   await expect(page.getByText("已新增「E2E分站」，並建立預設物資品項")).toBeVisible();
-  await expect(page.getByRole("cell", { name: "E2E分站" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "E2E分站", exact: true })).toBeVisible();
 
   await enterStation(page, "E2E分站");
   await page.getByRole("link", { name: "物資" }).click();
   await expect(page.getByText("飲用水")).toBeVisible();
+});
+
+test("系統管理調整救護站順序，站點清單跟著改變", async ({ page }) => {
+  await enterCommand(page);
+  await page.getByRole("link", { name: "系統管理" }).click();
+  await expect(page.getByRole("button", { name: "主站 上移" })).toBeDisabled();
+  await page.getByRole("button", { name: "分站B 上移" }).click();
+  await expect(page.locator("tbody tr").nth(1)).toContainText("分站B");
+  await page.getByRole("button", { name: "分站B 上移" }).click();
+  await expect(page.locator("tbody tr").first()).toContainText("分站B");
+  await expect(page.getByRole("button", { name: "分站B 上移" })).toBeDisabled();
+
+  await page.goto("/station");
+  const names = await page.locator("ul li a span.text-xl").allTextContents();
+  expect(names.slice(0, 3)).toEqual(["分站B", "主站", "分站A"]);
 });
 
 test("成果報告頁顯示統計", async ({ page }) => {

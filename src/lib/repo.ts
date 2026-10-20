@@ -26,8 +26,12 @@ export type Station = {
   contactName: string;
   contactPhone: string;
   lastReportAt: Date | null;
+  /** 顯示順序（小的在前）；舊資料沒有時以建立時間排序 */
+  order?: number;
   createdAt: Date;
 };
+
+const stationOrder = (s: Station) => s.order ?? s.createdAt.getTime();
 
 /** 傷患紀錄 */
 export type Patient = {
@@ -158,7 +162,7 @@ export async function activateEvent(id: string) {
 // ── 救護站 ────────────────────────────────────────────────
 
 export async function listStations(eventId: string) {
-  return (await all<Station>(col.stations.where("eventId", "==", eventId))).sort(byAsc((s) => s.createdAt));
+  return (await all<Station>(col.stations.where("eventId", "==", eventId))).sort((a, b) => stationOrder(a) - stationOrder(b));
 }
 
 export async function countStations(eventId: string) {
@@ -177,12 +181,27 @@ export async function createStation(
   const now = new Date();
   const ref = col.stations.doc();
   const batch = firestore.batch();
-  batch.set(ref, { lastReportAt: null, ...data, createdAt: now });
+  // 新站排在最後
+  batch.set(ref, { lastReportAt: null, ...data, order: now.getTime(), createdAt: now });
   for (const s of supplies) {
     batch.set(col.supplies.doc(), { ...s, eventId: data.eventId, stationId: ref.id, updatedAt: now });
   }
   await batch.commit();
   return ref.id;
+}
+
+/** 把救護站往上或往下移一格，並將整個場次的順序重新編號 */
+export async function moveStation(stationId: string, direction: "up" | "down") {
+  const station = await getStation(stationId);
+  if (!station) return;
+  const list = await listStations(station.eventId);
+  const i = list.findIndex((s) => s.id === stationId);
+  const j = direction === "up" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  const batch = firestore.batch();
+  list.forEach((s, index) => batch.update(col.stations.doc(s.id), { order: index }));
+  await batch.commit();
 }
 
 export async function updateStation(id: string, data: Partial<NewData<Station>>) {

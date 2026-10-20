@@ -58,6 +58,12 @@ export async function updateStation(stationId: string, _prev: ActionState, formD
   return { ok: true, message: "已儲存" };
 }
 
+export async function moveStation(stationId: string, direction: "up" | "down") {
+  await repo.moveStation(stationId, direction);
+  await audit(await commandActor(), direction === "up" ? "救護站上移" : "救護站下移", "Station", stationId);
+  revalidatePath("/admin");
+}
+
 export async function deleteStation(stationId: string) {
   const station = await repo.getStation(stationId);
   if (!station) return;
