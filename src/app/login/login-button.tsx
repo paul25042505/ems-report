@@ -2,16 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signOut } from "firebase/auth";
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, type User } from "firebase/auth";
 import { clientAuth } from "@/lib/firebase-client";
 
 /** App 內建瀏覽器（LINE、Facebook、Instagram、WeChat 等）無法使用 Google 登入 */
 const IN_APP_BROWSER = /Line\/|FBAN|FBAV|Instagram|MicroMessenger|; wv\)/i;
 
+function googleProvider() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  return provider;
+}
+
 export function GoogleLoginButton() {
   const router = useRouter();
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  // 一開始先檢查是否剛從 Google 整頁跳轉回來
+  const [pending, setPending] = useState(true);
   const [inApp, setInApp] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -23,40 +30,53 @@ export function GoogleLoginButton() {
       return;
     }
     setInApp(IN_APP_BROWSER.test(ua));
-    // 預先載入 Google 登入元件：Safari 只允許「點擊後立刻」開啟的視窗，
-    // 若按下按鈕才開始載入，耗時太久會被當成非使用者觸發而擋下（auth/popup-blocked）
-    getRedirectResult(clientAuth()).catch(() => {});
+    // 同時也預先載入 Google 登入元件，讓按下按鈕後視窗能立刻開啟（Safari 對延遲開啟的視窗會擋下）
+    getRedirectResult(clientAuth())
+      .then((cred) => (cred ? finish(cred.user) : undefined))
+      .catch((e) => showError(e))
+      .finally(() => setPending(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** 以 Google 登入結果向伺服器換取 session，再進入系統或申請頁 */
+  async function finish(user: User) {
+    const res = await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken: await user.getIdToken() }),
+    });
+    // 伺服器已發 session cookie，瀏覽器端的 Firebase 登入狀態不再需要
+    await signOut(clientAuth());
+    if (!res.ok) {
+      setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "登入失敗");
+      return;
+    }
+    const { approved } = (await res.json()) as { approved?: boolean };
+    router.replace(approved ? "/" : "/apply");
+    router.refresh();
+  }
+
+  function showError(e: unknown) {
+    const code = (e as { code?: string }).code;
+    if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
+      setError(`登入失敗，請再試一次（${code ?? (e as Error).message}）`);
+    }
+  }
 
   async function login() {
     setError("");
     setPending(true);
     const auth = clientAuth();
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const cred = await signInWithPopup(auth, provider);
-      const res = await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: await cred.user.getIdToken() }),
-      });
-      // 伺服器已發 session cookie，瀏覽器端的 Firebase 登入狀態不再需要
-      await signOut(auth);
-      if (!res.ok) {
-        setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "登入失敗");
+      const cred = await signInWithPopup(auth, googleProvider());
+      await finish(cred.user);
+    } catch (e) {
+      // 手機瀏覽器擋下登入視窗時，改用整頁跳轉到 Google 登入，登入完會跳回此頁
+      if ((e as { code?: string }).code === "auth/popup-blocked") {
+        await signInWithRedirect(auth, googleProvider()).catch(showError);
         return;
       }
-      const { approved } = (await res.json()) as { approved?: boolean };
-      router.replace(approved ? "/" : "/apply");
-      router.refresh();
-    } catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code === "auth/popup-blocked") {
-        setError("瀏覽器擋下了登入視窗，請再按一次「使用 Google 帳號登入」。若一直出現，請到手機「設定 → Safari」關閉「阻擋彈出式視窗」。");
-      } else if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        setError(`登入失敗，請再試一次（${code ?? (e as Error).message}）`);
-      }
+      showError(e);
     } finally {
       setPending(false);
     }
