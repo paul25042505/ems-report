@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signOut } from "firebase/auth";
 import { clientAuth } from "@/lib/firebase-client";
 
 /** App 內建瀏覽器（LINE、Facebook、Instagram、WeChat 等）無法使用 Google 登入 */
@@ -23,6 +23,9 @@ export function GoogleLoginButton() {
       return;
     }
     setInApp(IN_APP_BROWSER.test(ua));
+    // 預先載入 Google 登入元件：Safari 只允許「點擊後立刻」開啟的視窗，
+    // 若按下按鈕才開始載入，耗時太久會被當成非使用者觸發而擋下（auth/popup-blocked）
+    getRedirectResult(clientAuth()).catch(() => {});
   }, []);
 
   async function login() {
@@ -49,7 +52,9 @@ export function GoogleLoginButton() {
       router.refresh();
     } catch (e) {
       const code = (e as { code?: string }).code;
-      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
+      if (code === "auth/popup-blocked") {
+        setError("瀏覽器擋下了登入視窗，請再按一次「使用 Google 帳號登入」。若一直出現，請到手機「設定 → Safari」關閉「阻擋彈出式視窗」。");
+      } else if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
         setError(`登入失敗，請再試一次（${code ?? (e as Error).message}）`);
       }
     } finally {
