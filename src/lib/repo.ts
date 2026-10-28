@@ -2,6 +2,7 @@
 // 所有查詢只用單一欄位的等值條件（Firestore 自動建立索引），排序在程式內完成，
 // 因此不需要另外建立複合索引。單一活動的資料量（數百筆）在記憶體內處理綽綽有餘。
 import { Timestamp, type DocumentSnapshot, type Query } from "firebase-admin/firestore";
+import { DEFAULT_SUPPLIES } from "./constants";
 import { firestore } from "./firestore";
 
 export type Event = {
@@ -393,4 +394,27 @@ export async function submitAccountRequest(email: string, data: { unit: string; 
 
 export async function reviewAccountRequest(email: string, status: "APPROVED" | "REJECTED", reviewedBy: string) {
   await col.accountRequests.doc(emailId(email)).update({ status, reviewedBy, updatedAt: new Date() });
+}
+
+// ── 清除測試資料 ──────────────────────────────────────────
+
+/**
+ * 把場次恢復成剛建立救護站時的狀態：刪除傷患紀錄與支援申請、物資恢復預設清單與數量、
+ * 救護站改回「開設中」並清除最後回報時間。救護站、場次、登入名單與操作紀錄保留。
+ */
+export async function resetEventData(eventId: string) {
+  const [patients, requests, supplies, stations] = await Promise.all(
+    [col.patients, col.requests, col.supplies, col.stations].map((c) => c.where("eventId", "==", eventId).get()),
+  );
+  const writer = firestore.bulkWriter();
+  for (const doc of [...patients.docs, ...requests.docs, ...supplies.docs]) writer.delete(doc.ref);
+  const now = new Date();
+  for (const station of stations.docs) {
+    writer.update(station.ref, { status: "OPEN", lastReportAt: null });
+    for (const s of DEFAULT_SUPPLIES) {
+      writer.create(col.supplies.doc(), { ...s, eventId, stationId: station.id, updatedAt: now });
+    }
+  }
+  await writer.close();
+  return { patients: patients.size, requests: requests.size, stations: stations.size };
 }

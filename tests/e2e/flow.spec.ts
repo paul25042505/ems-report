@@ -352,3 +352,36 @@ test("成果報告頁顯示統計", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "外科 小計" })).toBeVisible();
   await expect(page.getByText(/依科別分，內科 \d+ 人/)).toBeVisible();
 });
+
+// 會清空資料，必須放在最後
+test("清除測試資料：需輸入「清除」，執行後傷患與申請歸零、物資恢復預設", async ({ page }) => {
+  await enterCommand(page);
+  await page.goto("/command/patients");
+  await expect(page.getByText(/共 [1-9]\d* 筆/)).toBeVisible();
+
+  await page.goto("/admin");
+  page.on("dialog", (d) => d.accept());
+  await page.getByLabel("請輸入「清除」以確認").fill("刪除");
+  await page.getByRole("button", { name: "清除測試資料" }).click();
+  await expect(page.getByText("請在欄位中輸入「清除」兩個字才會執行")).toBeVisible();
+
+  await page.getByLabel("請輸入「清除」以確認").fill("清除");
+  await page.getByRole("button", { name: "清除測試資料" }).click();
+  await expect(page.getByText(/已清除：傷患紀錄 \d+ 筆、支援申請 \d+ 筆/)).toBeVisible();
+
+  await page.goto("/command/patients");
+  await expect(page.getByText("共 0 筆")).toBeVisible();
+  await page.goto("/command/requests");
+  await expect(page.getByText("目前沒有申請")).toBeVisible();
+  await page.goto("/command");
+  await expect(page.getByText("✓ 目前無警告")).toBeVisible();
+
+  await page.goto("/station");
+  await page.getByRole("link", { name: /^主站/ }).click();
+  await expect(page.getByText("最後回報：尚未回報")).toBeVisible();
+  await page.getByRole("link", { name: "物資" }).click();
+  await expect(page.getByLabel("飲用水 數量")).toHaveValue("10");
+
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("cell", { name: "清除測試資料" })).toBeVisible();
+});

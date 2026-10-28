@@ -3,7 +3,7 @@ import { countPatients, countStations, listEvents, listStations } from "@/lib/re
 import { toLocalDateInput } from "@/lib/time";
 import { StationStatusBadge } from "@/components/badges";
 import { activateEvent, moveStation } from "./actions";
-import { EventForm, StationForm } from "./admin-forms";
+import { EventForm, ResetEventForm, StationForm } from "./admin-forms";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +128,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <section className="card">
             <h2 className="mb-2">新增救護站</h2>
             <StationForm eventId={selected.id} />
+          </section>
+
+          <section className="card space-y-2 ring-2 ring-red-200">
+            <h2>清除測試資料</h2>
+            <p className="text-sm text-slate-600">
+              正式活動前，可把「{selected.name}」恢復成剛建立好救護站時的樣子：
+            </p>
+            <ul className="list-disc pl-5 text-sm text-slate-600">
+              <li>刪除所有傷患紀錄、支援申請</li>
+              <li>每站物資恢復預設品項與數量，站點改回「開設中」並清除最後回報時間</li>
+              <li>保留：救護站設定、場次、登入名單、操作紀錄</li>
+            </ul>
+            <p className="text-sm font-semibold text-red-700">
+              此動作無法復原。需要保留的資料請先到「傷患紀錄」匯出 CSV。
+            </p>
+            <ResetEventForm eventId={selected.id} eventName={selected.name} />
           </section>
         </div>
       )}

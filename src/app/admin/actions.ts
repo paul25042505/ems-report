@@ -130,3 +130,19 @@ export async function rejectAccountRequest(email: string) {
   await audit(await commandActor(), "拒絕帳號申請", "AccountRequest", request.email, request);
   revalidatePath("/admin/users");
 }
+
+/** 清除場次的測試資料（需輸入「清除」確認） */
+export async function resetEventData(eventId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (String(formData.get("confirm") ?? "").trim() !== "清除") {
+    return { error: "請在欄位中輸入「清除」兩個字才會執行" };
+  }
+  const event = await repo.getEvent(eventId);
+  if (!event) return { error: "找不到這個場次" };
+  const result = await repo.resetEventData(eventId);
+  await audit(await commandActor(), "清除測試資料", "Event", eventId, { event: event.name, ...result });
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: `已清除：傷患紀錄 ${result.patients} 筆、支援申請 ${result.requests} 筆，${result.stations} 個救護站的物資與狀態已恢復預設`,
+  };
+}

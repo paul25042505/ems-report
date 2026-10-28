@@ -1,7 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
-import { addAllowedUser, approveAccountRequest, createEvent, createStation, setMemberRoles, updateEvent, updateStation } from "./actions";
+import {
+  addAllowedUser,
+  approveAccountRequest,
+  createEvent,
+  createStation,
+  resetEventData,
+  setMemberRoles,
+  updateEvent,
+  updateStation,
+} from "./actions";
 import { ActionForm, Field, FormMessage, SubmitButton } from "@/components/forms";
 import { MEMBER_ROLES, STATION_STATUS } from "@/lib/constants";
 
@@ -156,6 +165,31 @@ export function ApproveRequestForm({ email }: { email: string }) {
         核准
       </SubmitButton>
       {state.error && <span className="text-xs font-semibold text-red-700">{state.error}</span>}
+    </ActionForm>
+  );
+}
+
+/** 清除場次測試資料：需輸入「清除」並再按一次確認 */
+export function ResetEventForm({ eventId, eventName }: { eventId: string; eventName: string }) {
+  const [state, action, pending] = useActionState(resetEventData.bind(null, eventId), {});
+  return (
+    <ActionForm action={action} resetOn={state} className="space-y-3">
+      <FormMessage state={state} />
+      <Field label="請輸入「清除」以確認" name="confirm" id="reset-confirm" state={state}>
+        <input id="reset-confirm" name="confirm" className="input" autoComplete="off" placeholder="清除" />
+      </Field>
+      <button
+        type="submit"
+        disabled={pending}
+        className="btn w-full bg-red-700 text-white hover:bg-red-800"
+        onClick={(e) => {
+          if (!window.confirm(`確定要清除「${eventName}」的所有傷患紀錄、支援申請，並把物資與站點狀態恢復預設嗎？此動作無法復原。`)) {
+            e.preventDefault();
+          }
+        }}
+      >
+        {pending ? "清除中…" : "清除測試資料"}
+      </button>
     </ActionForm>
   );
 }
