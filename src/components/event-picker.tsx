@@ -10,7 +10,7 @@ export function EventPicker({ events, current }: { events: { id: string; name: s
   return (
     <select
       aria-label="選擇活動場次"
-      className="input w-auto max-w-full py-1 text-sm"
+      className="input w-auto max-w-full py-1"
       value={current}
       onChange={(e) => {
         const next = new URLSearchParams(params);

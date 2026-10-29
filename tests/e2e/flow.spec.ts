@@ -25,6 +25,17 @@ test("LINE 內建瀏覽器自動改用外部瀏覽器；其他 App 內建瀏覽�
   await expect(normal.getByText("請用 Chrome 或 Safari 開啟")).toHaveCount(0);
 });
 
+test("畫面固定不能縮放，並提供加入主畫面的 App 設定", async ({ page }) => {
+  await page.goto("/login");
+  const viewport = await page.locator('meta[name="viewport"]').getAttribute("content");
+  expect(viewport).toContain("maximum-scale=1");
+  expect(viewport).toContain("user-scalable=no");
+  const manifest = await page.request.get("/manifest.webmanifest");
+  expect(manifest.status()).toBe(200);
+  expect((await manifest.json()).display).toBe("standalone");
+  expect((await page.request.get("/apple-icon")).headers()["content-type"]).toContain("image/png");
+});
+
 test("不在名單上的帳號無法登入；加入名單後可以登入，移出後失效", async ({ browser }) => {
   // 不在名單上：登入後只能進申請帳號頁
   const outsider = await browser.newPage();

@@ -2,8 +2,24 @@
 
 /* 戶外日照下使用，維持高對比、大按鈕 */
 @layer base {
+  html {
+    /* 取消點兩下放大、避免橫向時文字自動放大 */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     @apply bg-slate-100 text-slate-900 antialiased;
+    /* 全螢幕（加入主畫面）時避開瀏海與底部橫條 */
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  /* iOS 在輸入框字級小於 16px 時會自動放大畫面，統一至少 16px */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
   }
   h1 {
     @apply text-xl font-bold;
