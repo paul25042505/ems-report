@@ -405,6 +405,12 @@ test("輪椅借用：借出、全部借出警告、在別站歸還", async ({ br
   const aStats = a.locator("section", { hasText: "♿ 輪椅借用" });
   await expect(aStats.locator("dd").nth(2)).toHaveText("3"); // 分站A 配置 2，收到 1 台 → 可借 3
 
+  // 選擇救護站清單顯示輪椅數量；沒有輪椅的站不顯示
+  await a.goto("/station");
+  await expect(a.getByRole("link", { name: /^主站/ })).toContainText("♿ 可借 0／共 3");
+  await expect(a.getByRole("link", { name: /^分站A/ })).toContainText("♿ 可借 3／共 2");
+  await expect(a.getByRole("link", { name: /^分站B/ })).not.toContainText("♿");
+
   await main.reload();
   const mStats = main.locator("section", { hasText: "♿ 輪椅借用" });
   await expect(mStats.locator("dd").nth(1)).toHaveText("2"); // 主站借出中剩 2

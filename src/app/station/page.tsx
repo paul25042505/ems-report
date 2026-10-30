@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { getActiveEvent } from "@/lib/dashboard";
-import { listStations } from "@/lib/repo";
+import { listLoansByEvent, listStations } from "@/lib/repo";
+import { wheelchairStatus } from "@/lib/summary";
 import { StationStatusBadge } from "@/components/badges";
 
 export const dynamic = "force-dynamic";
 
 export default async function StationPicker() {
   const event = await getActiveEvent();
-  const stations = event ? await listStations(event.id) : [];
+  const [stations, loans] = event ? await Promise.all([listStations(event.id), listLoansByEvent(event.id)]) : [[], []];
+  const chairs = wheelchairStatus(stations, loans);
 
   return (
     <main className="mx-auto max-w-md space-y-4 p-4">
@@ -30,6 +32,7 @@ export default async function StationPicker() {
                 <span>
                   <span className="block text-xl font-bold">{s.name}</span>
                   {s.location && <span className="block text-sm text-slate-600">{s.location}</span>}
+                  <WheelchairBadge status={chairs.get(s.id)} />
                 </span>
                 <StationStatusBadge status={s.status} />
               </Link>
@@ -38,5 +41,18 @@ export default async function StationPicker() {
         </ul>
       )}
     </main>
+  );
+}
+
+/** 有配置輪椅（或收到別站歸還的輪椅）的站才顯示 */
+function WheelchairBadge({ status }: { status?: { allocated: number; available: number } }) {
+  if (!status || (status.allocated === 0 && status.available === 0)) return null;
+  const none = status.available <= 0;
+  return (
+    <span
+      className={`mt-1 inline-block rounded-md px-2 py-0.5 text-sm font-semibold ${none ? "bg-red-50 text-red-700" : "bg-sky-50 text-sky-800"}`}
+    >
+      ♿ 可借 {status.available}／共 {status.allocated}
+    </span>
   );
 }
