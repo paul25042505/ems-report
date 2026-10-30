@@ -3,6 +3,8 @@
 /* 戶外日照下使用，維持高對比、大按鈕 */
 @layer base {
   html {
+    /* 保險：頁面不允許左右捲動 */
+    overflow-x: clip;
     /* 取消點兩下放大、避免橫向時文字自動放大 */
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
@@ -20,6 +22,20 @@
   select,
   textarea {
     font-size: max(16px, 1em);
+    min-width: 0;
+    max-width: 100%;
+  }
+  /* iPhone Safari 的日期欄位有固定最小寬度，兩欄並排時會把頁面撐寬 */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.75rem;
+    text-align: left;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
   }
   h1 {
     @apply text-xl font-bold;

@@ -97,7 +97,8 @@ export function Field({
 }) {
   const error = state?.fieldErrors?.[name];
   return (
-    <div>
+    // min-w-0：放在 grid 內時允許縮小，避免內容撐寬版面
+    <div className="min-w-0">
       <label className="label" htmlFor={id}>
         {label}
       </label>

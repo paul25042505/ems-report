@@ -21,7 +21,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-      <aside className="space-y-4">
+      <aside className="min-w-0 space-y-4">
         <section className="card">
           <h2 className="mb-2">活動場次</h2>
           {events.length === 0 && <p className="text-sm text-slate-500">尚無場次，請先建立。</p>}
@@ -54,7 +54,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </aside>
 
       {selected && (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <section className="card">
             <h2 className="mb-2">場次資料</h2>
             <EventForm

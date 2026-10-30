@@ -411,6 +411,16 @@ test("輪椅借用：借出、全部借出警告、在別站歸還", async ({ br
   await expect(mStats.locator("dd").nth(2)).toHaveText("0"); // 輪椅在分站A，主站仍沒有可借
 });
 
+test("手機寬度下各頁面不會左右撐開", async ({ browser }) => {
+  const phone = await browser.newPage({ viewport: { width: 375, height: 800 }, isMobile: true, hasTouch: true });
+  await enterCommand(phone);
+  for (const path of ["/", "/command", "/command/patients", "/command/summary", "/admin", "/admin/users", "/station"]) {
+    await phone.goto(path);
+    const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, path).toBeLessThanOrEqual(0);
+  }
+});
+
 // 會清空資料，必須放在最後
 test("清除測試資料：需輸入「清除」，執行後傷患與申請歸零、物資恢復預設", async ({ page }) => {
   await enterCommand(page);
