@@ -144,6 +144,18 @@ export const stationSchema = z.object({
   contactName: text(30),
   contactPhone: text(30),
   status: pick(STATION_STATUS),
+  wheelchairs: z.preprocess(
+    (v) => (v === "" || v === undefined ? 0 : v),
+    z.coerce.number({ error: "請填數字" }).int("請填整數").min(0, "不可小於 0").max(200, "最多 200"),
+  ),
+});
+
+export const loanSchema = z.object({
+  borrowerName: required(30, "請輸入借用人姓名"),
+  borrowerPhone: z
+    .string()
+    .trim()
+    .regex(/^[0-9+\-() #]{6,20}$/, "請輸入正確的電話"),
 });
 
 export const allowedUserSchema = z.object({

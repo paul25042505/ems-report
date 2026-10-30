@@ -64,10 +64,45 @@ export function hourlyCounts(patients: PatientLite[]) {
   }));
 }
 
+export type LoanLite = { stationId: string; returnStationId: string | null; returnedAt: Date | null };
+
+export type WheelchairStatus = {
+  /** 配置數量 */
+  allocated: number;
+  /** 目前在站內、可以借出的數量（別站借來這裡還的也算） */
+  available: number;
+  /** 從這站借出、尚未歸還的數量 */
+  out: number;
+};
+
+/** 依配置數量與借用紀錄算出各站輪椅狀態：可借 = 配置 − 從本站借出 + 在本站歸還 */
+export function wheelchairStatus(stations: { id: string; wheelchairs?: number }[], loans: LoanLite[]) {
+  const result = new Map<string, WheelchairStatus>();
+  for (const s of stations) result.set(s.id, { allocated: s.wheelchairs ?? 0, available: s.wheelchairs ?? 0, out: 0 });
+  for (const l of loans) {
+    const from = result.get(l.stationId);
+    if (from) {
+      from.available -= 1;
+      if (!l.returnedAt) from.out += 1;
+    }
+    if (l.returnedAt && l.returnStationId) {
+      const to = result.get(l.returnStationId);
+      if (to) to.available += 1;
+    }
+  }
+  return result;
+}
+
 export type Alert = { level: "danger" | "warning"; stationId: string; message: string };
 
 export function computeAlerts(
-  input: { stations: StationLite[]; patients: PatientLite[]; supplies: SupplyLite[]; requests: RequestLite[] },
+  input: {
+    stations: (StationLite & { wheelchairs?: number })[];
+    patients: PatientLite[];
+    supplies: SupplyLite[];
+    requests: RequestLite[];
+    loans?: LoanLite[];
+  },
   now = new Date(),
 ): Alert[] {
   const name = new Map(input.stations.map((s) => [s.id, s.name]));
@@ -102,6 +137,14 @@ export function computeAlerts(
         stationId: s.stationId,
         message: `${name.get(s.stationId)}：${s.name} 剩 ${s.quantity}${s.unit}（低於安全存量 ${s.threshold}）`,
       });
+    }
+  }
+
+  const chairs = wheelchairStatus(input.stations, input.loans ?? []);
+  for (const s of input.stations) {
+    const c = chairs.get(s.id);
+    if (s.status !== "CLOSED" && c && c.allocated > 0 && c.available <= 0) {
+      alerts.push({ level: "warning", stationId: s.id, message: `${s.name}：輪椅已全部借出（借出中 ${c.out} 台）` });
     }
   }
 

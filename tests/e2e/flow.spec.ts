@@ -364,6 +364,53 @@ test("成果報告頁顯示統計", async ({ page }) => {
   await expect(page.getByText(/依科別分，內科 \d+ 人/)).toBeVisible();
 });
 
+test("輪椅借用：借出、全部借出警告、在別站歸還", async ({ browser }) => {
+  const main = await browser.newPage();
+  await enterStation(main, "主站");
+  await expect(main.getByRole("heading", { name: "♿ 輪椅借用" })).toBeVisible();
+
+  // 電話格式錯誤
+  await main.getByRole("button", { name: "＋ 借出輪椅" }).click();
+  await main.getByLabel("借用人姓名").fill("錯誤電話");
+  await main.getByLabel("電話").fill("abc");
+  await main.getByRole("button", { name: "確認借出" }).click();
+  await expect(main.getByText("請輸入正確的電話")).toBeVisible();
+
+  // 借出 3 台（主站配置 3 台）
+  for (const [i, name] of ["借用甲", "借用乙", "借用丙"].entries()) {
+    if (i > 0) await main.getByRole("button", { name: "＋ 借出輪椅" }).click();
+    await main.getByLabel("借用人姓名").fill(name);
+    await main.getByLabel("電話").fill(`0912-000-00${i}`);
+    await main.getByRole("button", { name: "確認借出" }).click();
+    await expect(main.getByText(`已借出輪椅給 ${name}`)).toBeVisible();
+  }
+  await expect(main.getByRole("button", { name: "目前沒有可借的輪椅" })).toBeDisabled();
+
+  const command = await browser.newPage();
+  await enterCommand(command);
+  await expect(command.getByText("主站：輪椅已全部借出（借出中 3 台）")).toBeVisible();
+  await expect(command.getByRole("heading", { name: "♿ 輪椅" })).toBeVisible();
+
+  // 沒有配置輪椅的站不顯示
+  const b = await browser.newPage();
+  await enterStation(b, "分站B");
+  await expect(b.getByRole("heading", { name: "♿ 輪椅借用" })).toHaveCount(0);
+
+  // 在分站A 歸還主站借出的輪椅
+  const a = await browser.newPage();
+  await enterStation(a, "分站A");
+  await expect(a.getByText("主站借出・", { exact: false }).first()).toBeVisible();
+  await a.getByRole("button", { name: "借用乙 歸還" }).click();
+  await expect(a.getByRole("button", { name: "借用乙 歸還" })).toHaveCount(0);
+  const aStats = a.locator("section", { hasText: "♿ 輪椅借用" });
+  await expect(aStats.locator("dd").nth(2)).toHaveText("3"); // 分站A 配置 2，收到 1 台 → 可借 3
+
+  await main.reload();
+  const mStats = main.locator("section", { hasText: "♿ 輪椅借用" });
+  await expect(mStats.locator("dd").nth(1)).toHaveText("2"); // 主站借出中剩 2
+  await expect(mStats.locator("dd").nth(2)).toHaveText("0"); // 輪椅在分站A，主站仍沒有可借
+});
+
 // 會清空資料，必須放在最後
 test("清除測試資料：需輸入「清除」，執行後傷患與申請歸零、物資恢復預設", async ({ page }) => {
   await enterCommand(page);
@@ -378,7 +425,7 @@ test("清除測試資料：需輸入「清除」，執行後傷患與申請歸�
 
   await page.getByLabel("請輸入「清除」以確認").fill("清除");
   await page.getByRole("button", { name: "清除測試資料" }).click();
-  await expect(page.getByText(/已清除：傷患紀錄 \d+ 筆、支援申請 \d+ 筆/)).toBeVisible();
+  await expect(page.getByText(/已清除：傷患紀錄 \d+ 筆、支援申請 \d+ 筆、輪椅借用 \d+ 筆/)).toBeVisible();
 
   await page.goto("/command/patients");
   await expect(page.getByText("共 0 筆")).toBeVisible();

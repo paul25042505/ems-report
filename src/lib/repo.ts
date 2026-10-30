@@ -29,6 +29,8 @@ export type Station = {
   lastReportAt: Date | null;
   /** 顯示順序（小的在前）；舊資料沒有時以建立時間排序 */
   order?: number;
+  /** 配置的輪椅數量；0 或沒有表示此站沒有輪椅借用 */
+  wheelchairs?: number;
   createdAt: Date;
 };
 
@@ -109,6 +111,7 @@ const col = {
   auditLogs: firestore.collection("auditLogs"),
   allowedUsers: firestore.collection("allowedUsers"),
   accountRequests: firestore.collection("accountRequests"),
+  loans: firestore.collection("equipmentLoans"),
 };
 
 /** Firestore 的 Timestamp 轉回 Date */
@@ -399,15 +402,15 @@ export async function reviewAccountRequest(email: string, status: "APPROVED" | "
 // ── 清除測試資料 ──────────────────────────────────────────
 
 /**
- * 把場次恢復成剛建立救護站時的狀態：刪除傷患紀錄與支援申請、物資恢復預設清單與數量、
+ * 把場次恢復成剛建立救護站時的狀態：刪除傷患紀錄、支援申請與借用紀錄，物資恢復預設清單與數量、
  * 救護站改回「開設中」並清除最後回報時間。救護站、場次、登入名單與操作紀錄保留。
  */
 export async function resetEventData(eventId: string) {
-  const [patients, requests, supplies, stations] = await Promise.all(
-    [col.patients, col.requests, col.supplies, col.stations].map((c) => c.where("eventId", "==", eventId).get()),
+  const [patients, requests, supplies, stations, loans] = await Promise.all(
+    [col.patients, col.requests, col.supplies, col.stations, col.loans].map((c) => c.where("eventId", "==", eventId).get()),
   );
   const writer = firestore.bulkWriter();
-  for (const doc of [...patients.docs, ...requests.docs, ...supplies.docs]) writer.delete(doc.ref);
+  for (const doc of [...patients.docs, ...requests.docs, ...supplies.docs, ...loans.docs]) writer.delete(doc.ref);
   const now = new Date();
   for (const station of stations.docs) {
     writer.update(station.ref, { status: "OPEN", lastReportAt: null });
@@ -416,5 +419,38 @@ export async function resetEventData(eventId: string) {
     }
   }
   await writer.close();
-  return { patients: patients.size, requests: requests.size, stations: stations.size };
+  return { patients: patients.size, requests: requests.size, loans: loans.size, stations: stations.size };
+}
+
+// ── 設備借用（輪椅） ──────────────────────────────────────
+
+/** 借用紀錄：在 stationId 借出，可在任何有該設備的站歸還（returnStationId） */
+export type EquipmentLoan = {
+  id: string;
+  eventId: string;
+  /** 設備種類，目前只有 WHEELCHAIR，之後可擴充 */
+  equipment: string;
+  stationId: string;
+  borrowerName: string;
+  borrowerPhone: string;
+  borrowedAt: Date;
+  returnStationId: string | null;
+  returnedAt: Date | null;
+};
+
+export async function listLoansByEvent(eventId: string) {
+  return (await all<EquipmentLoan>(col.loans.where("eventId", "==", eventId))).sort(byDesc((l) => l.borrowedAt));
+}
+
+export async function getLoan(id: string) {
+  return fromDoc<EquipmentLoan>(await col.loans.doc(id).get());
+}
+
+export async function createLoan(data: Omit<EquipmentLoan, "id" | "borrowedAt" | "returnStationId" | "returnedAt">) {
+  const ref = await col.loans.add({ ...data, borrowedAt: new Date(), returnStationId: null, returnedAt: null });
+  return ref.id;
+}
+
+export async function returnLoan(id: string, returnStationId: string) {
+  await col.loans.doc(id).update({ returnStationId, returnedAt: new Date() });
 }

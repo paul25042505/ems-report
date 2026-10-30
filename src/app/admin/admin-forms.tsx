@@ -50,6 +50,7 @@ type StationValues = {
   contactName: string;
   contactPhone: string;
   status: string;
+  wheelchairs?: number;
 };
 
 export function StationForm({ eventId, station }: { eventId: string; station?: StationValues }) {
@@ -88,6 +89,18 @@ export function StationForm({ eventId, station }: { eventId: string; station?: S
               </option>
             ))}
           </select>
+        </Field>
+        <Field label="輪椅數量" name="wheelchairs" id={`${p}wheelchairs`} state={state} hint="沒有輪椅填 0，站點就不會出現輪椅借用">
+          <input
+            id={`${p}wheelchairs`}
+            name="wheelchairs"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={200}
+            className="input"
+            defaultValue={station?.wheelchairs ?? 0}
+          />
         </Field>
       </div>
       <SubmitButton className="btn-dark" pending={pending}>

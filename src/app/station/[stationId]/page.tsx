@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { listPatientsByStation } from "@/lib/repo";
+import { listLoansByEvent, listPatientsByStation, listStations } from "@/lib/repo";
 import { getStationContext } from "@/lib/context";
 import { STATION_STATUS, categoryText, displayName } from "@/lib/constants";
-import { totals } from "@/lib/summary";
-import { formatAgo, formatTime, startOfLocalDay } from "@/lib/time";
+import { totals, wheelchairStatus } from "@/lib/summary";
+import { formatAgo, formatDateTime, formatTime, startOfLocalDay } from "@/lib/time";
 import { DispositionBadge, StationStatusBadge } from "@/components/badges";
 import { StatTile } from "@/components/charts";
 import { heartbeat, setStationStatus } from "./actions";
+import { WheelchairPanel } from "./wheelchair-panel";
 
 export default async function StationHome({
   params,
@@ -22,6 +23,7 @@ export default async function StationHome({
   const todays = patients.filter((p) => p.arrivedAt >= today);
   const t = totals(todays);
   const observing = patients.filter((p) => p.disposition === "OBSERVING");
+  const chairs = station.wheelchairs ? await wheelchairData(station.id, station.eventId) : null;
   const others = patients.filter((p) => p.disposition !== "OBSERVING");
 
   return (
@@ -70,10 +72,30 @@ export default async function StationHome({
         <StatTile label="今日後送" value={t.transferred} tone={t.transferred ? "danger" : "default"} />
       </div>
 
+      {chairs && <WheelchairPanel stationId={station.id} {...chairs} />}
+
       <PatientList stationId={station.id} title={`留站觀察中（${observing.length}）`} patients={observing} empty="目前沒有留觀傷患" />
       <PatientList stationId={station.id} title={`已離站（${others.length}）`} patients={others} empty="尚無紀錄" />
     </>
   );
+}
+
+async function wheelchairData(stationId: string, eventId: string) {
+  const [stations, loans] = await Promise.all([listStations(eventId), listLoansByEvent(eventId)]);
+  const status = wheelchairStatus(stations, loans).get(stationId)!;
+  const names = new Map(stations.map((s) => [s.id, s.name]));
+  const open = loans
+    .filter((l) => !l.returnedAt)
+    .sort((a, b) => Number(b.stationId === stationId) - Number(a.stationId === stationId))
+    .map((l) => ({
+      id: l.id,
+      stationId: l.stationId,
+      stationName: names.get(l.stationId) ?? "",
+      borrowerName: l.borrowerName,
+      borrowerPhone: l.borrowerPhone,
+      borrowedAt: `${formatDateTime(l.borrowedAt)}（${formatAgo(l.borrowedAt)}）`,
+    }));
+  return { ...status, loans: open };
 }
 
 function PatientList({

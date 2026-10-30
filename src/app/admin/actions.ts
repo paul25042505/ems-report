@@ -143,6 +143,6 @@ export async function resetEventData(eventId: string, _prev: ActionState, formDa
   revalidatePath("/", "layout");
   return {
     ok: true,
-    message: `已清除：傷患紀錄 ${result.patients} 筆、支援申請 ${result.requests} 筆，${result.stations} 個救護站的物資與狀態已恢復預設`,
+    message: `已清除：傷患紀錄 ${result.patients} 筆、支援申請 ${result.requests} 筆、輪椅借用 ${result.loans} 筆，${result.stations} 個救護站的物資與狀態已恢復預設`,
   };
 }

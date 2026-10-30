@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  listLoansByEvent,
   getActiveEvent,
   getEvent,
   listPatientsByEvent,
@@ -8,7 +9,7 @@ import {
   listSuppliesByEvent,
 } from "./repo";
 import { departmentOf } from "./constants";
-import { computeAlerts, countBy, hourlyCounts, totals } from "./summary";
+import { computeAlerts, countBy, hourlyCounts, totals, wheelchairStatus } from "./summary";
 
 export { getActiveEvent };
 
@@ -22,12 +23,15 @@ export async function resolveEvent(eventId?: string) {
 }
 
 export async function getEventDashboard(eventId: string, now = new Date()) {
-  const [stations, patients, supplies, requests] = await Promise.all([
+  const [stations, patients, supplies, requests, loans] = await Promise.all([
     listStations(eventId),
     listPatientsByEvent(eventId),
     listSuppliesByEvent(eventId),
     listRequestsByEvent(eventId),
+    listLoansByEvent(eventId),
   ]);
+  const chairs = wheelchairStatus(stations, loans);
+  const stationName = new Map(stations.map((s) => [s.id, s.name]));
 
   return {
     stations: stations.map((s) => {
@@ -56,7 +60,14 @@ export async function getEventDashboard(eventId: string, now = new Date()) {
     byAgeGroup: countBy(patients, (p) => p.ageGroup),
     bySex: countBy(patients, (p) => p.sex),
     hourly: hourlyCounts(patients),
-    alerts: computeAlerts({ stations, patients, supplies, requests }, now),
+    alerts: computeAlerts({ stations, patients, supplies, requests, loans }, now),
+    // 有配置輪椅、或有輪椅借用往來的站
+    wheelchairs: stations
+      .map((s) => ({ id: s.id, name: s.name, ...chairs.get(s.id)! }))
+      .filter((c) => c.allocated > 0 || c.out > 0 || c.available > 0),
+    openLoans: loans
+      .filter((l) => !l.returnedAt)
+      .map((l) => ({ ...l, stationName: stationName.get(l.stationId) ?? "" })),
   };
 }
 

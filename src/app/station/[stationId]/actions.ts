@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as repo from "@/lib/repo";
+import { wheelchairStatus } from "@/lib/summary";
 import { audit } from "@/lib/audit";
 import { getStationContext } from "@/lib/context";
 import {
@@ -12,6 +13,7 @@ import {
   stationStatusSchema,
   supplyCreateSchema,
   supplyQuantitySchema,
+  loanSchema,
   type ActionState,
 } from "@/lib/validation";
 
@@ -113,4 +115,32 @@ export async function createRequest(stationId: string, _prev: ActionState, formD
   await touch(station.id);
   revalidatePath(`/station/${station.id}/requests`);
   return { ok: true, message: "已送出，指揮中心會盡快處理" };
+}
+
+export async function borrowWheelchair(stationId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { actor, station } = await getStationContext(stationId);
+  if (!station.wheelchairs) return { error: "此站沒有配置輪椅" };
+  const parsed = parseForm(loanSchema, formData);
+  if (!parsed.success) return parsed.state;
+  const [stations, loans] = await Promise.all([repo.listStations(station.eventId), repo.listLoansByEvent(station.eventId)]);
+  if ((wheelchairStatus(stations, loans).get(station.id)?.available ?? 0) <= 0) {
+    return { error: "本站目前沒有可借的輪椅" };
+  }
+  const id = await repo.createLoan({ ...parsed.data, eventId: station.eventId, equipment: "WHEELCHAIR", stationId: station.id });
+  await audit(actor, "借出輪椅", "EquipmentLoan", id, parsed.data);
+  await touch(station.id);
+  revalidatePath(`/station/${station.id}`);
+  return { ok: true, message: `已借出輪椅給 ${parsed.data.borrowerName}` };
+}
+
+/** 歸還輪椅：任何有配置輪椅的站都可以收 */
+export async function returnWheelchair(stationId: string, loanId: string) {
+  const { actor, station } = await getStationContext(stationId);
+  if (!station.wheelchairs) return;
+  const loan = await repo.getLoan(loanId);
+  if (!loan || loan.returnedAt || loan.eventId !== station.eventId) return;
+  await repo.returnLoan(loanId, station.id);
+  await audit(actor, "歸還輪椅", "EquipmentLoan", loanId, { borrowerName: loan.borrowerName, borrowedAt: loan.borrowedAt });
+  await touch(station.id);
+  revalidatePath(`/station/${station.id}`);
 }

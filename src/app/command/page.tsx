@@ -102,6 +102,55 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
         ))}
       </section>
 
+      {d.wheelchairs.length > 0 && (
+        <section className="card overflow-x-auto">
+          <h2 className="mb-2">♿ 輪椅</h2>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>站點</th>
+                <th className="text-right">配置</th>
+                <th className="text-right">借出中</th>
+                <th className="text-right">可借</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.wheelchairs.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.name}</td>
+                  <td className="text-right tabular-nums">{c.allocated}</td>
+                  <td className="text-right tabular-nums">{c.out}</td>
+                  <td className={`text-right font-bold tabular-nums ${c.available > 0 ? "text-green-700" : "text-red-700"}`}>{c.available}</td>
+                </tr>
+              ))}
+              <tr className="font-bold">
+                <td>合計</td>
+                <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.allocated, 0)}</td>
+                <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.out, 0)}</td>
+                <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.available, 0)}</td>
+              </tr>
+            </tbody>
+          </table>
+          {d.openLoans.length > 0 && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-700">借用中名單（{d.openLoans.length}）</summary>
+              <ul className="mt-2 divide-y divide-slate-100 text-sm">
+                {d.openLoans.map((l) => (
+                  <li key={l.id} className="flex flex-wrap justify-between gap-2 py-1.5">
+                    <span>
+                      {l.borrowerName}　{l.borrowerPhone}
+                    </span>
+                    <span className="text-slate-500">
+                      {l.stationName}借出・{formatAgo(l.borrowedAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      )}
+
       <section className="card">
         <h2 className="mb-2">站點位置</h2>
         <StationMap

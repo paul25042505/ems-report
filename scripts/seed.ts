@@ -27,7 +27,7 @@ async function seedDemo() {
   const stations: repo.Station[] = [];
   for (const d of defs) {
     const id = await repo.createStation(
-      { ...d, eventId, status: "OPEN", lastReportAt: new Date(now.getTime() - 5 * 60_000) },
+      { ...d, eventId, status: "OPEN", lastReportAt: new Date(now.getTime() - 5 * 60_000), wheelchairs: { 主站: 3, 分站A: 2 }[d.name] ?? 0 },
       DEFAULT_SUPPLIES,
     );
     stations.push((await repo.getStation(id))!);

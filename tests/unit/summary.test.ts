@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeAlerts, csvCell, hourlyCounts, toCsv, totals, type PatientLite } from "@/lib/summary";
+import { computeAlerts, csvCell, hourlyCounts, toCsv, totals, wheelchairStatus, type PatientLite } from "@/lib/summary";
 
 const now = new Date("2026-10-18T06:00:00Z"); // 台北 14:00
 
@@ -103,5 +103,43 @@ describe("CSV", () => {
 
   it("加上 BOM 與 CRLF", () => {
     expect(toCsv([["a", "b"], [1, 2]])).toBe("﻿a,b\r\n1,2\r\n");
+  });
+});
+
+describe("輪椅借用", () => {
+  const t = new Date("2026-10-30T02:00:00Z");
+  const stations = [
+    { id: "A", wheelchairs: 3 },
+    { id: "B", wheelchairs: 2 },
+    { id: "C" },
+  ];
+  const loans = [
+    { stationId: "A", returnStationId: null, returnedAt: null }, // A 借出中
+    { stationId: "A", returnStationId: "B", returnedAt: t }, // A 借、B 還
+    { stationId: "B", returnStationId: "B", returnedAt: t }, // B 借、B 還
+  ];
+
+  it("可借 = 配置 − 從本站借出 + 在本站歸還", () => {
+    const s = wheelchairStatus(stations, loans);
+    expect(s.get("A")).toEqual({ allocated: 3, available: 1, out: 1 });
+    expect(s.get("B")).toEqual({ allocated: 2, available: 3, out: 0 });
+    expect(s.get("C")).toEqual({ allocated: 0, available: 0, out: 0 });
+  });
+
+  it("全部借出時發出警告，沒有配置的站不警告", () => {
+    const alerts = computeAlerts(
+      {
+        stations: [
+          { id: "A", name: "主站", status: "OPEN", lastReportAt: null, wheelchairs: 1 },
+          { id: "C", name: "分站C", status: "OPEN", lastReportAt: null },
+        ],
+        patients: [],
+        supplies: [],
+        requests: [],
+        loans: [{ stationId: "A", returnStationId: null, returnedAt: null }],
+      },
+      t,
+    );
+    expect(alerts.map((a) => a.message)).toEqual(["主站：輪椅已全部借出（借出中 1 台）"]);
   });
 });
