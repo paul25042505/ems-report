@@ -50,11 +50,11 @@ export function WheelchairPanel({
         <ActionForm action={action} resetOn={state} className="space-y-3 rounded-lg bg-slate-50 p-3">
           <FormMessage state={state} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="借用人姓名（選填）" name="borrowerName" id="borrowerName" state={state}>
-              <input id="borrowerName" name="borrowerName" className="input" maxLength={30} autoComplete="off" />
+            <Field label="借用人姓名" name="borrowerName" id="borrowerName" state={state}>
+              <input id="borrowerName" name="borrowerName" className="input" maxLength={30} autoComplete="off" required />
             </Field>
-            <Field label="電話（選填）" name="borrowerPhone" id="borrowerPhone" state={state}>
-              <input id="borrowerPhone" name="borrowerPhone" type="tel" inputMode="tel" className="input" maxLength={20} autoComplete="off" />
+            <Field label="電話" name="borrowerPhone" id="borrowerPhone" state={state}>
+              <input id="borrowerPhone" name="borrowerPhone" type="tel" inputMode="tel" className="input" maxLength={20} autoComplete="off" required />
             </Field>
           </div>
           <div className="flex gap-2">
@@ -96,14 +96,14 @@ export function WheelchairPanel({
               <li key={l.id} className="flex items-center justify-between gap-2 py-2">
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">
-                    {l.borrowerName || "（未填姓名）"}　<span className="font-normal text-slate-600">{l.borrowerPhone}</span>
+                    {l.borrowerName}　<span className="font-normal text-slate-600">{l.borrowerPhone}</span>
                   </span>
                   <span className="block text-xs text-slate-500">
                     {l.stationId === stationId ? "本站" : l.stationName}借出・{l.borrowedAt}
                   </span>
                 </span>
                 <form action={returnWheelchair.bind(null, stationId, l.id)}>
-                  <button className="btn-secondary btn-sm" aria-label={`${l.borrowerName || "未填姓名"} 歸還`}>
+                  <button className="btn-secondary btn-sm" aria-label={`${l.borrowerName} 歸還`}>
                     歸還
                   </button>
                 </form>

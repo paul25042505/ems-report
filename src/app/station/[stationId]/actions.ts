@@ -130,7 +130,7 @@ export async function borrowWheelchair(stationId: string, _prev: ActionState, fo
   await audit(actor, "借出輪椅", "EquipmentLoan", id, parsed.data);
   await touch(station.id);
   revalidatePath(`/station/${station.id}`);
-  return { ok: true, message: parsed.data.borrowerName ? `已借出輪椅給 ${parsed.data.borrowerName}` : "已借出輪椅" };
+  return { ok: true, message: `已借出輪椅給 ${parsed.data.borrowerName}` };
 }
 
 /** 歸還輪椅：任何有配置輪椅的站都可以收 */
