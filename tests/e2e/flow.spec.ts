@@ -371,19 +371,22 @@ test("輪椅借用：借出、全部借出警告、在別站歸還", async ({ br
 
   // 電話格式錯誤
   await main.getByRole("button", { name: "＋ 借出輪椅" }).click();
-  await main.getByLabel("借用人姓名").fill("錯誤電話");
   await main.getByLabel("電話").fill("abc");
   await main.getByRole("button", { name: "確認借出" }).click();
   await expect(main.getByText("請輸入正確的電話")).toBeVisible();
 
-  // 借出 3 台（主站配置 3 台）
-  for (const [i, name] of ["借用甲", "借用乙", "借用丙"].entries()) {
+  // 借出 3 台（主站配置 3 台）；姓名電話可不填
+  for (const [i, name] of ["借用甲", "借用乙"].entries()) {
     if (i > 0) await main.getByRole("button", { name: "＋ 借出輪椅" }).click();
     await main.getByLabel("借用人姓名").fill(name);
     await main.getByLabel("電話").fill(`0912-000-00${i}`);
     await main.getByRole("button", { name: "確認借出" }).click();
     await expect(main.getByText(`已借出輪椅給 ${name}`)).toBeVisible();
   }
+  await main.getByRole("button", { name: "＋ 借出輪椅" }).click();
+  await main.getByRole("button", { name: "確認借出" }).click();
+  await expect(main.getByText("已借出輪椅", { exact: true })).toBeVisible();
+  await expect(main.getByText("（未填姓名）")).toBeVisible();
   await expect(main.getByRole("button", { name: "目前沒有可借的輪椅" })).toBeDisabled();
 
   const command = await browser.newPage();

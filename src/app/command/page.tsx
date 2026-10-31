@@ -144,7 +144,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
                 {d.openLoans.map((l) => (
                   <li key={l.id} className="flex flex-wrap justify-between gap-2 py-1.5">
                     <span>
-                      {l.borrowerName}　{l.borrowerPhone}
+                      {l.borrowerName || "（未填姓名）"}　{l.borrowerPhone}
                     </span>
                     <span className="text-slate-500">
                       {l.stationName}借出・{formatAgo(l.borrowedAt)}

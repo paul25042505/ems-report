@@ -150,12 +150,14 @@ export const stationSchema = z.object({
   ),
 });
 
+/** 輪椅借用：姓名、電話都可以不填；電話有填時需為正確格式 */
 export const loanSchema = z.object({
-  borrowerName: required(30, "請輸入借用人姓名"),
+  borrowerName: text(30),
   borrowerPhone: z
     .string()
     .trim()
-    .regex(/^[0-9+\-() #]{6,20}$/, "請輸入正確的電話"),
+    .regex(/^([0-9+\-() #]{6,20})?$/, "請輸入正確的電話")
+    .default(""),
 });
 
 export const allowedUserSchema = z.object({
