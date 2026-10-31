@@ -10,6 +10,7 @@ import {
 } from "./repo";
 import { departmentOf } from "./constants";
 import { computeAlerts, countBy, hourlyCounts, totals, wheelchairStatus } from "./summary";
+import { startOfLocalDay } from "./time";
 
 export { getActiveEvent };
 
@@ -31,6 +32,10 @@ export async function getEventDashboard(eventId: string, now = new Date()) {
     listLoansByEvent(eventId),
   ]);
   const chairs = wheelchairStatus(stations, loans);
+  // 今日（台北時間）借出的筆數，含已歸還
+  const todayStart = startOfLocalDay(now);
+  const todayLoans = loans.filter((l) => l.borrowedAt >= todayStart);
+  const todayByStation = countBy(todayLoans, (l) => l.stationId);
   const stationName = new Map(stations.map((s) => [s.id, s.name]));
 
   return {
@@ -63,8 +68,9 @@ export async function getEventDashboard(eventId: string, now = new Date()) {
     alerts: computeAlerts({ stations, patients, supplies, requests, loans }, now),
     // 有配置輪椅、或有輪椅借用往來的站
     wheelchairs: stations
-      .map((s) => ({ id: s.id, name: s.name, ...chairs.get(s.id)! }))
-      .filter((c) => c.allocated > 0 || c.out > 0 || c.available > 0),
+      .map((s) => ({ id: s.id, name: s.name, ...chairs.get(s.id)!, today: todayByStation[s.id] ?? 0 }))
+      .filter((c) => c.allocated > 0 || c.out > 0 || c.available > 0 || c.today > 0),
+    wheelchairsToday: todayLoans.length,
     openLoans: loans
       .filter((l) => !l.returnedAt)
       .map((l) => ({ ...l, stationName: stationName.get(l.stationId) ?? "" })),

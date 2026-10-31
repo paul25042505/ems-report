@@ -389,6 +389,9 @@ test("輪椅借用：借出、全部借出警告、在別站歸還", async ({ br
   const command = await browser.newPage();
   await enterCommand(command);
   await expect(command.getByText("主站：輪椅已全部借出（借出中 3 台）")).toBeVisible();
+  const todayTile = command.locator(".card", { hasText: "今日輪椅借出" });
+  await expect(todayTile.locator("p").nth(1)).toHaveText("3");
+  await expect(todayTile.getByText("借出中 3 台")).toBeVisible();
   await expect(command.getByRole("heading", { name: "♿ 輪椅" })).toBeVisible();
 
   // 沒有配置輪椅的站不顯示

@@ -39,11 +39,14 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-3 ${d.wheelchairs.length ? "md:grid-cols-5" : "md:grid-cols-4"}`}>
         <StatTile label="累計人次" value={d.totals.total} />
         <StatTile label="留站觀察" value={d.totals.observing} tone={d.totals.observing ? "warning" : "default"} />
         <StatTile label="後送醫院" value={d.totals.transferred} tone={d.totals.transferred ? "danger" : "default"} />
         <StatTile label="待處理申請" value={d.pendingRequests} tone={d.pendingRequests ? "danger" : "default"} />
+        {d.wheelchairs.length > 0 && (
+          <StatTile label="今日輪椅借出" value={d.wheelchairsToday} hint={`借出中 ${d.openLoans.length} 台`} />
+        )}
       </div>
 
       <section className="card" aria-live="polite">
@@ -110,6 +113,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
               <tr>
                 <th>站點</th>
                 <th className="text-right">配置</th>
+                <th className="text-right">今日借出</th>
                 <th className="text-right">借出中</th>
                 <th className="text-right">可借</th>
               </tr>
@@ -119,6 +123,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
                 <tr key={c.id}>
                   <td>{c.name}</td>
                   <td className="text-right tabular-nums">{c.allocated}</td>
+                  <td className="text-right tabular-nums">{c.today}</td>
                   <td className="text-right tabular-nums">{c.out}</td>
                   <td className={`text-right font-bold tabular-nums ${c.available > 0 ? "text-green-700" : "text-red-700"}`}>{c.available}</td>
                 </tr>
@@ -126,6 +131,7 @@ export default async function CommandDashboard({ searchParams }: { searchParams:
               <tr className="font-bold">
                 <td>合計</td>
                 <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.allocated, 0)}</td>
+                <td className="text-right tabular-nums">{d.wheelchairsToday}</td>
                 <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.out, 0)}</td>
                 <td className="text-right tabular-nums">{d.wheelchairs.reduce((s, c) => s + c.available, 0)}</td>
               </tr>
